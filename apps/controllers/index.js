@@ -16,6 +16,7 @@ router.use("/", UserController);
 
 router.use("/admin", AuthMiddleware);
 router.use("/admin/role", require("./admin/RoleController"));
+router.use("/admin/category", require("./admin/CategoryController"));
 
 
 // Trang chủ
