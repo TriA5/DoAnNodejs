@@ -22,6 +22,7 @@
 | **History**  | Lịch sử xem, tiếp tục xem              |
 | **Banner**   | Slider trang chủ                       |
 
+tải lại node modules
 
 Vào Mongo cluster bữa tạo,  tạo mới database dì đó(ví dụ WebXemPhim) có collection dì đó (ví dụ a)
 Ròi vào kết nối
