@@ -1,12 +1,13 @@
 class Episode {
     _id;
-    MovieId;
-    EpisodeNumber;
-    Title;
-    VideoUrl;
-    SubtitleUrl;
+    Name;       // Tên tập: "Tập 1", "Full"
+    MovieId;    // Thuộc phim nào
+    Path;       // Đường dẫn file .m3u8 (QUAN TRỌNG)
+    Duration;   // Thời lượng
+    CreatedTime;
 
-    constructor() {}
+    constructor() {
+        this.CreatedTime = new Date();
+    }
 }
-
 module.exports = Episode;

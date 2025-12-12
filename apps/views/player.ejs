@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Video HLS</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        body { background: #000; color: #fff; text-align: center; padding-top: 50px; }
+        video { width: 80%; max-width: 800px; border: 2px solid #333; }
+    </style>
+</head>
+<body>
+
+    <h1>Demo Streaming HLS (Chống Download)</h1>
+    
+    <video id="video" controls></video>
+
+    <script>
+        var video = document.getElementById('video');
+        
+        // 3. Đường dẫn file m3u8 (Lấy từ kết quả Postman của bạn)
+        // Lưu ý: Phải có http://localhost:3000 ở trước nếu chạy local
+        var videoSrc = 'http://localhost:3000/static/videos/streams/1765521249404-5153741884151/playlist.m3u8';
+
+        if (Hls.isSupported()) {
+            console.log("Trình duyệt có hỗ trợ HLS.js");
+            var hls = new Hls();
+            
+            // Tải nguồn video
+            hls.loadSource(videoSrc);
+            
+            // Gắn vào thẻ video
+            hls.attachMedia(video);
+            
+            hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                video.play();
+                console.log("Đã bắt đầu phát!");
+            });
+        }
+        // Trường hợp Safari (iPhone/Mac) hỗ trợ native
+        else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = videoSrc;
+            video.addEventListener('loadedmetadata', function() {
+                video.play();
+            });
+        }
+    </script>
+
+</body>
+</html>

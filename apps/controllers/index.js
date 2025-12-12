@@ -17,7 +17,14 @@ router.use("/", UserController);
 router.use("/admin", AuthMiddleware);
 router.use("/admin/role", require("./admin/RoleController"));
 router.use("/admin/category", require("./admin/CategoryController"));
+router.use("/admin/movie", require("./admin/MovieController"));
+router.use("/admin/episode", require("./admin/EpisodeController"));
 
+// Route test player
+router.get("/test-player", function(req, res){
+    // Render file player.ejs vừa tạo
+    res.render("player"); 
+});
 
 // Trang chủ
 router.get("/", function(req, res){
