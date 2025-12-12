@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Đăng Nhập Xem Phim</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; padding-top: 100px; }
+        form { border: 1px solid #ccc; padding: 20px; border-radius: 5px; width: 300px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #28a745; color: white; border: none; cursor: pointer; }
+        button:hover { background: #218838; }
+        .error { color: red; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <form id="loginForm">
+        <h2 style="text-align: center;">Đăng Nhập</h2>
+        <p id="message" class="error"></p>
+        
+        <input type="email" id="email" placeholder="Email" value="admin@gmail.com" required>
+        <input type="password" id="password" placeholder="Mật khẩu" value="123456" required>
+        
+        <button type="submit">Đăng nhập</button>
+    </form>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const msg = document.getElementById('message');
+
+            try {
+                // 1. Gọi API Login thật của bạn
+                // Lưu ý: Đường dẫn phải đúng với API bạn khai báo trong index.js (/login hoặc /auth/login)
+                const res = await fetch('/login', { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ Email: email, Password: password })
+                });
+
+                const data = await res.json();
+
+                if (data.status) {
+                    // 2. ĐĂNG NHẬP THÀNH CÔNG -> LƯU TOKEN
+                    // Lưu vào localStorage để dùng lâu dài
+                    localStorage.setItem('user_token', data.data.token);
+                    
+                    alert("Đăng nhập thành công! Chuyển sang trang phim...");
+                    
+                    // 3. Chuyển hướng sang trang xem phim
+                    window.location.href = "/watch-movie";
+                } else {
+                    msg.innerText = data.message;
+                }
+            } catch (err) {
+                console.error(err);
+                msg.innerText = "Lỗi kết nối server!";
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,49 +1,77 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Test Video HLS</title>
+    <title>Xem Phim Online</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        body { background: #000; color: #fff; text-align: center; padding-top: 50px; }
+        body { background: #000; color: #fff; text-align: center; padding-top: 50px; font-family: sans-serif; }
         video { width: 80%; max-width: 800px; border: 2px solid #333; }
+        button { padding: 10px 20px; background: #dc3545; color: white; border: none; cursor: pointer; margin-top: 20px;}
     </style>
 </head>
 <body>
-
-    <h1>Demo Streaming HLS (Chống Download)</h1>
-    
-    <video id="video" controls></video>
+    <h1>Rạp Phim Tại Gia</h1>
+    <video id="video" controls autoplay muted></video>
+    <br>
+    <button onclick="logout()">Đăng Xuất</button>
 
     <script>
+        // 1. LẤY TOKEN TỪ STORAGE (Do trang Login đã lưu)
+        var token = localStorage.getItem('user_token');
+
+        // 2. CHECK BẢO MẬT PHÍA CLIENT
+        // Nếu không có token -> Đuổi về trang login ngay
+        if (!token) {
+            alert("Bạn chưa đăng nhập! Vui lòng đăng nhập để xem.");
+            window.location.href = "/login-page";
+        }
+
         var video = document.getElementById('video');
         
-        // 3. Đường dẫn file m3u8 (Lấy từ kết quả Postman của bạn)
-        // Lưu ý: Phải có http://localhost:3000 ở trước nếu chạy local
-        var videoSrc = 'http://localhost:3000/static/videos/streams/1765521249404-5153741884151/playlist.m3u8';
+        // Link gốc từ DB (Vẫn là link cũ để test)
+        var baseUrl = 'http://localhost:3000/static/videos/streams/1765521249404-5153741884151/playlist.m3u8';
+        
+        // Gắn token vào link
+        var videoSrc = baseUrl + "?token=" + token;
+
+        console.log("Token lấy từ Login:", token);
 
         if (Hls.isSupported()) {
-            console.log("Trình duyệt có hỗ trợ HLS.js");
-            var hls = new Hls();
-            
-            // Tải nguồn video
+            var hls = new Hls({
+                // Tự động gắn token vào mọi file con .ts
+                xhrSetup: function(xhr, url) {
+                    if (url.indexOf("token=") === -1) {
+                        var newUrl = url + (url.indexOf("?") === -1 ? "?" : "&") + "token=" + token;
+                        xhr.open("GET", newUrl, true);
+                    }
+                }
+            });
             hls.loadSource(videoSrc);
-            
-            // Gắn vào thẻ video
             hls.attachMedia(video);
-            
             hls.on(Hls.Events.MANIFEST_PARSED, function() {
-                video.play();
-                console.log("Đã bắt đầu phát!");
+                video.play().catch(e => console.log("Cần tương tác để phát"));
+            });
+            
+            // Xử lý khi Token hết hạn hoặc không hợp lệ (Lỗi 403 từ Server trả về)
+            hls.on(Hls.Events.ERROR, function (event, data) {
+                 if(data.response && data.response.code === 403) {
+                     alert("Phiên đăng nhập hết hạn! Vui lòng đăng nhập lại.");
+                     logout(); // Xóa token và đá về trang login
+                 }
             });
         }
-        // Trường hợp Safari (iPhone/Mac) hỗ trợ native
         else if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = videoSrc;
             video.addEventListener('loadedmetadata', function() {
                 video.play();
             });
         }
-    </script>
 
+        // Hàm đăng xuất
+        function logout() {
+            localStorage.removeItem('user_token');
+            window.location.href = "/login-page";
+        }
+    </script>
 </body>
 </html>
