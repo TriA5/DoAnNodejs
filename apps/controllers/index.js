@@ -1,9 +1,25 @@
 var express = require("express");
 var router = express.Router();
-// router.use("/admin", require(__dirname + "/admin/admincontroller"));
-// router.use("/about", require(__dirname + "/aboutcontroller"));
-router.use("/admin/role", require(__dirname + "/admin/RoleController"));
-router.get("/", function(req,res){
+
+var AuthMiddleware = require("../Middlewares/AuthMiddleware");
+var UserController = require("./UserController"); 
+
+router.use("/profile", AuthMiddleware);
+
+
+
+router.use("/", UserController);
+
+
+
+
+
+router.use("/admin", AuthMiddleware);
+router.use("/admin/role", require("./admin/RoleController"));
+
+
+// Trang chủ
+router.get("/", function(req, res){
     res.json({"message": "this is index page"});
 });
 

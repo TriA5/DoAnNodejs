@@ -1,3 +1,5 @@
+var ObjectId = require('mongodb').ObjectId;
+
 class UserRepository {
     context;
     session;
@@ -13,14 +15,26 @@ class UserRepository {
             .insertOne(user, { session: this.session });
     }
 
+    async getUserByEmail(email) {
+        return await this.context
+            .collection("user")
+            .findOne({ Email: email }); 
+    }
+
     async getUserById(id) {
-        return await this.context.collection("user").findOne({ _id: id });
+        try {
+            const objectId = typeof id === 'string' ? new ObjectId(id) : id;
+            return await this.context.collection("user").findOne({ _id: objectId });
+        } catch (error) {
+            return null;
+        }
     }
 
     async updateUser(id, data) {
+        const objectId = typeof id === 'string' ? new ObjectId(id) : id;
         return await this.context
             .collection("user")
-            .updateOne({ _id: id }, { $set: data }, { session: this.session });
+            .updateOne({ _id: objectId }, { $set: data }, { session: this.session });
     }
 }
 

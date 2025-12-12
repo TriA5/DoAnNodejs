@@ -2,6 +2,8 @@ var express = require("express");
 var app = express();
 global.__basedir = __dirname;
 
+app.use(express.json()); 
+app.use(express.urlencoded({ extended: true }));
 
 var bodyParser = require('body-parser')
 app.use(express.json());
