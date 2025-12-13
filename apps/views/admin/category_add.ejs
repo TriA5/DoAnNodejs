@@ -1,0 +1,68 @@
+<%- include('partials/head') %>
+<%- include('partials/sidebar') %>
+
+<div class="flex-grow-1 p-4">
+
+    <div class="mb-3">
+        <a href="/admin-ui/categories" class="btn btn-secondary">&larr; Quay lại</a>
+    </div>
+
+    <h2>➕ Thêm Thể Loại Mới</h2>
+
+    <div class="card shadow-sm mt-3" style="max-width: 600px;">
+        <div class="card-body">
+            <form id="addCateForm">
+                <div class="mb-3">
+                    <label class="form-label">Tên thể loại <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="Name" required placeholder="Ví dụ: Kinh dị">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Mô tả</label>
+                    <textarea class="form-control" id="Description" rows="3" placeholder="Mô tả ngắn gọn..."></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-success w-100">Lưu Thể Loại</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('user_token');
+
+        document.getElementById('addCateForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const payload = {
+                Name: document.getElementById('Name').value,
+                Description: document.getElementById('Description').value
+            };
+
+            try {
+                const res = await fetch('/admin/category/create', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+                
+                if(data.status) {
+                    alert("✅ Thêm thành công!");
+                    window.location.href = '/admin-ui/categories'; 
+                } else {
+                    alert("❌ Lỗi: " + data.message);
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Lỗi kết nối server!");
+            }
+        });
+    </script>
+
+</div>
+
+<%- include('partials/footer') %>

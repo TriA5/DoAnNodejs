@@ -40,7 +40,13 @@ router.get("/admin-ui/movies", AdminMiddleware, function(req, res){
 router.get("/admin-ui/movies/create", AdminMiddleware, function(req, res){
     res.render("admin/movie_add", { page: "movies" }); 
 });
+router.get("/admin-ui/categories", function(req, res){
+    res.render("admin/category_list", { page: "categories" }); 
+});
 
+router.get("/admin-ui/categories/create", function(req, res){
+    res.render("admin/category_add", { page: "categories" }); 
+});
 
 // Trang chủ
 router.get("/", function(req, res){
