@@ -1,0 +1,82 @@
+<%- include('partials/head') %>
+
+<%- include('partials/sidebar') %>
+
+<div class="flex-grow-1 p-4">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🎥 Danh Sách Phim</h2>
+        <a href="/admin-ui/movies/create" class="btn btn-primary">+ Thêm Phim Mới</a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table class="table table-hover table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Tên phim</th>
+                        <th>Ảnh</th>
+                        <th>Thể loại</th>
+                        <th>Năm</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="movieTableBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('user_token');
+        
+        async function loadMovies() {
+            try {
+                const res = await fetch('/admin/movie', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+
+                if (data.status) {
+                    const tbody = document.getElementById('movieTableBody');
+                    tbody.innerHTML = ''; 
+
+                    data.data.forEach(movie => {
+                        let cateName = movie.CategoryInfo?.[0]?.Name || "Chưa phân loại";
+                        const row = `
+                            <tr>
+                                <td>
+                                    <strong>${movie.Name}</strong><br>
+                                    <small class="text-muted">${movie.OriginName}</small>
+                                </td>
+                                <td>
+                                    <img src="${movie.Thumb}" style="height: 50px; object-fit: cover;">
+                                </td>
+                                <td><span class="badge bg-info text-dark">${cateName}</span></td>
+                                <td>${movie.Year}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteMovie('${movie._id}')">Xóa</button>
+                                </td>
+                            </tr>
+                        `;
+                        tbody.innerHTML += row;
+                    });
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function deleteMovie(id) {
+            if(!confirm("Xóa phim này?")) return;
+            const res = await fetch('/admin/movie/delete/' + id, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            if(data.status) { loadMovies(); } 
+            else { alert(data.message); }
+        }
+
+        loadMovies();
+    </script>
+
+</div> <%- include('partials/footer') %>

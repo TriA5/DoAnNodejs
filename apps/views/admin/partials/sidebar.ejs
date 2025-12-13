@@ -1,0 +1,26 @@
+<div class="sidebar p-3" style="width: 250px; flex-shrink: 0;">
+    <h3 class="text-white mb-4">🎬 Admin</h3>
+    <hr>
+    
+    <a href="/admin-ui/movies" class="<%= page === 'movies' ? 'active' : '' %>">
+        🎥 Quản lý Phim
+    </a>
+    
+    <a href="/admin-ui/categories" class="<%= page === 'categories' ? 'active' : '' %>">
+        📂 Quản lý Thể loại
+    </a>
+    
+    <a href="/admin-ui/episodes" class="<%= page === 'episodes' ? 'active' : '' %>">
+        🎞️ Upload Tập Phim
+    </a>
+
+    <hr>
+    <a href="#" onclick="logout()" class="text-danger">🚪 Đăng xuất</a>
+</div>
+
+<script>
+    function logout() {
+        localStorage.removeItem('user_token');
+        window.location.href = '/login-page';
+    }
+</script>

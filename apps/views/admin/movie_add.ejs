@@ -1,0 +1,156 @@
+<%- include('partials/head') %>
+<%- include('partials/sidebar') %>
+
+<div class="flex-grow-1 p-4">
+
+    <div class="mb-3">
+        <a href="/admin-ui/movies" class="btn btn-secondary">&larr; Quay lại</a>
+    </div>
+
+    <h2>➕ Thêm Phim Mới</h2>
+
+    <div class="card shadow-sm mt-3">
+        <div class="card-body">
+            <form id="addMovieForm">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Tên phim (Tiếng Việt) <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="Name" required placeholder="Người Nhện">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Tên gốc</label>
+                        <input type="text" class="form-control" id="OriginName" placeholder="Spider Man">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Thể loại <span class="text-danger">*</span></label>
+                        <select class="form-select" id="CategoryId" required>
+                            <option value="">-- Chọn --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Năm phát hành</label>
+                        <input type="number" class="form-control" id="Year" value="2024">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Loại phim</label>
+                        <select class="form-select" id="Type">
+                            <option value="single">Phim lẻ</option>
+                            <option value="series">Phim bộ</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Trạng thái</label>
+                        <select class="form-select" id="Status">
+                            <option value="ongoing">Đang chiếu</option>
+                            <option value="completed">Hoàn thành</option>
+                            <option value="trailer">Trailer</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Ảnh Poster (Upload)</label>
+                        <input type="file" class="form-control" id="ThumbFile" accept="image/*">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Hoặc Link Ảnh (URL)</label>
+                        <input type="text" class="form-control" id="ThumbUrl" placeholder="https://...">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Thời lượng</label>
+                    <input type="text" class="form-control" id="Time" placeholder="VD: 120 phút">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Nội dung tóm tắt</label>
+                    <textarea class="form-control" id="Content" rows="3"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-success w-100">💾 Lưu Phim</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('user_token');
+        if (!token) window.location.href = '/login-page';
+
+        // Load Thể loại
+        async function loadCategories() {
+            try {
+                const res = await fetch('/admin/category', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                if(data.status) {
+                    const select = document.getElementById('CategoryId');
+                    data.data.forEach(cat => {
+                        const option = document.createElement('option');
+                        option.value = cat._id;
+                        option.text = cat.Name;
+                        select.appendChild(option);
+                    });
+                }
+            } catch(e) { console.error(e); }
+        }
+        loadCategories();
+
+        // Xử lý Submit
+        document.getElementById('addMovieForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // 1. DÙNG FORMDATA ĐỂ GỬI FILE
+            const formData = new FormData();
+            
+            formData.append('Name', document.getElementById('Name').value);
+            formData.append('OriginName', document.getElementById('OriginName').value);
+            formData.append('CategoryId', document.getElementById('CategoryId').value);
+            formData.append('Year', document.getElementById('Year').value);
+            formData.append('Type', document.getElementById('Type').value);
+            formData.append('Status', document.getElementById('Status').value);
+            formData.append('Time', document.getElementById('Time').value);
+            formData.append('Content', document.getElementById('Content').value);
+            
+            // Xử lý ảnh: Ưu tiên file upload, nếu không thì lấy URL text
+            const fileInput = document.getElementById('ThumbFile');
+            if(fileInput.files.length > 0) {
+                formData.append('ThumbFile', fileInput.files[0]);
+            } else {
+                formData.append('ThumbUrl', document.getElementById('ThumbUrl').value);
+            }
+
+            try {
+                const res = await fetch('/admin/movie/create', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                        // LƯU Ý: KHÔNG ĐƯỢC set 'Content-Type': 'application/json' 
+                        // Để trình duyệt tự động set multipart/form-data
+                    },
+                    body: formData
+                });
+
+                const data = await res.json();
+                
+                if(data.status) {
+                    alert("✅ Thêm phim thành công!");
+                    window.location.href = '/admin-ui/movies'; 
+                } else {
+                    alert("❌ Lỗi: " + data.message);
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Lỗi kết nối server!");
+            }
+        });
+
+        function logout() { localStorage.removeItem('user_token'); window.location.href='/login-page'; }
+    </script>
+</div>
+<%- include('partials/footer') %>

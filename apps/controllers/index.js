@@ -29,6 +29,17 @@ router.get("/watch-movie", function(req, res){
     res.render("player", { token: null }); 
 });
 
+// Trang danh sách phim
+router.get("/admin-ui/movies", function(req, res){
+    // Truyền biến page: 'movies' xuống view
+    res.render("admin/movie_list", { page: "movies" }); 
+});
+
+// Trang thêm phim
+router.get("/admin-ui/movies/create", function(req, res){
+    res.render("admin/movie_add", { page: "movies" }); 
+});
+
 
 // Trang chủ
 router.get("/", function(req, res){
