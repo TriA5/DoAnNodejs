@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh Sách Phim</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            background: rgba(0,0,0,0.8) !important;
+            backdrop-filter: blur(10px);
+        }
+        .movie-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            height: 100%;
+        }
+        .movie-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        .movie-poster {
+            width: 100%;
+            height: 350px;
+            object-fit: cover;
+        }
+        .movie-info {
+            padding: 15px;
+        }
+        .movie-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .movie-meta {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        .badge-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .search-box {
+            background: white;
+            border-radius: 50px;
+            padding: 10px 20px;
+            margin: 20px 0;
+        }
+        .category-filter {
+            margin: 20px 0;
+        }
+        .category-filter .btn {
+            margin: 5px;
+            border-radius: 25px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/movies">
+                <i class="fas fa-film"></i> <strong>CinemaHub</strong>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/movies">Phim</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container py-4">
+        
+        <!-- Header -->
+        <div class="text-center text-white mb-4">
+            <h1 class="display-4 fw-bold">🎬 Khám Phá Phim</h1>
+            <p class="lead">Hàng ngàn bộ phim đang chờ bạn</p>
+        </div>
+
+        <!-- Search & Filter -->
+        <div class="row justify-content-center mb-4">
+            <div class="col-md-8">
+                <div class="search-box">
+                    <input type="text" class="form-control border-0" id="searchInput" 
+                           placeholder="🔍 Tìm kiếm phim..." onkeyup="filterMovies()">
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Filter -->
+        <div class="category-filter text-center" id="categoryFilter">
+            <button class="btn btn-light active" onclick="filterByCategory('')">Tất cả</button>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading" class="text-center text-white">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Đang tải...</span>
+            </div>
+        </div>
+
+        <!-- Movies Grid -->
+        <div class="row g-4" id="moviesGrid" style="display: none;">
+            <!-- Movies will be loaded here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="text-center text-white" style="display: none;">
+            <i class="fas fa-film fa-5x mb-3 opacity-50"></i>
+            <h3>Không tìm thấy phim nào</h3>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let allMovies = [];
+        let allCategories = [];
+        let currentCategory = '';
+
+        // Check login
+        const token = localStorage.getItem('user_token');
+        if (!token) {
+            alert("Vui lòng đăng nhập!");
+            window.location.href = "/login-page";
+        }
+
+        // Load movies
+        async function loadMovies() {
+            try {
+                const res = await fetch('/movie/list', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+
+                if (data.status) {
+                    allMovies = data.data;
+                    
+                    // Extract unique categories
+                    const categoryMap = {};
+                    allMovies.forEach(movie => {
+                        if (movie.CategoryInfo && movie.CategoryInfo[0]) {
+                            const cat = movie.CategoryInfo[0];
+                            categoryMap[cat._id] = cat.Name;
+                        }
+                    });
+                    allCategories = Object.entries(categoryMap).map(([id, name]) => ({ id, name }));
+                    
+                    renderCategories();
+                    renderMovies(allMovies);
+                } else {
+                    showEmpty();
+                }
+            } catch (err) {
+                console.error(err);
+                showEmpty();
+            }
+        }
+
+        // Render categories
+        function renderCategories() {
+            const filter = document.getElementById('categoryFilter');
+            allCategories.forEach(cat => {
+                filter.innerHTML += `
+                    <button class="btn btn-light" onclick="filterByCategory('${cat.id}')">${cat.name}</button>
+                `;
+            });
+        }
+
+        // Render movies
+        function renderMovies(movies) {
+            const grid = document.getElementById('moviesGrid');
+            const loading = document.getElementById('loading');
+            const empty = document.getElementById('emptyState');
+
+            loading.style.display = 'none';
+            
+            if (movies.length === 0) {
+                grid.style.display = 'none';
+                empty.style.display = 'block';
+                return;
+            }
+
+            grid.style.display = 'flex';
+            empty.style.display = 'none';
+            grid.innerHTML = '';
+
+            movies.forEach(movie => {
+                const categoryName = movie.CategoryInfo?.[0]?.Name || 'Chưa phân loại';
+                const thumb = movie.Thumb || '/static/images/default-movie.jpg';
+                
+                grid.innerHTML += `
+                    <div class="col-md-3 col-sm-6">
+                        <div class="movie-card" onclick="viewMovie('${movie._id}')">
+                            <img src="${thumb}" class="movie-poster" alt="${movie.Name}">
+                            <div class="movie-info">
+                                <div class="movie-title">${movie.Name}</div>
+                                <div class="movie-meta">
+                                    <span class="badge badge-custom">${categoryName}</span>
+                                    <span class="badge bg-secondary">${movie.Year || 'N/A'}</span>
+                                </div>
+                                <div class="movie-meta mt-2">
+                                    <i class="fas fa-eye"></i> ${movie.View || 0} lượt xem
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Filter by category
+        function filterByCategory(categoryId) {
+            currentCategory = categoryId;
+            
+            // Update active button
+            document.querySelectorAll('.category-filter .btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Filter movies
+            filterMovies();
+        }
+
+        // Filter movies by search and category
+        function filterMovies() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            let filtered = allMovies.filter(movie => {
+                const matchSearch = movie.Name.toLowerCase().includes(searchTerm) || 
+                                   (movie.OriginName && movie.OriginName.toLowerCase().includes(searchTerm));
+                const matchCategory = !currentCategory || 
+                                     (movie.CategoryInfo && movie.CategoryInfo[0] && movie.CategoryInfo[0]._id === currentCategory);
+                return matchSearch && matchCategory;
+            });
+
+            renderMovies(filtered);
+        }
+
+        // View movie detail
+        function viewMovie(movieId) {
+            window.location.href = '/movie/' + movieId;
+        }
+
+        // Show empty state
+        function showEmpty() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('moviesGrid').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'block';
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('user_token');
+            document.cookie = 'user_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            window.location.href = "/login-page";
+        }
+
+        // Init
+        loadMovies();
+    </script>
+
+</body>
+</html>

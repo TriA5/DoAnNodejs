@@ -6,8 +6,10 @@ const verifyToken = (req, res, next) => {
     let token =
         req.body?.token || 
         req.query?.token || 
+        req.cookies?.user_token ||  // Thêm cookie support
         req.headers["x-access-token"] || 
-        req.headers["authorization"];
+        req.headers["authorization"] ||
+        req.headers["Authorization"];  // Thêm Authorization với chữ A hoa
 
     if (!token) {
         return res.status(403).json({ 

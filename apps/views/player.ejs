@@ -1,44 +1,186 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Xem Phim Online</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background: #000; color: #fff; text-align: center; padding-top: 50px; font-family: sans-serif; }
-        video { width: 80%; max-width: 800px; border: 2px solid #333; }
-        button { padding: 10px 20px; background: #dc3545; color: white; border: none; cursor: pointer; margin-top: 20px;}
+        body { 
+            background: #0f0f0f; 
+            color: #fff; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .navbar {
+            background: rgba(0,0,0,0.9) !important;
+        }
+        .video-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        video { 
+            width: 100%;
+            display: block;
+            background: #000;
+        }
+        .video-info {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 0 0 15px 15px;
+        }
+        .video-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .controls-bar {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .btn-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            transition: transform 0.3s;
+        }
+        .btn-custom:hover {
+            transform: scale(1.05);
+            color: white;
+        }
+        .quality-badge {
+            background: #28a745;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: inline-block;
+        }
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
-    <h1>Rạp Phim Tại Gia</h1>
-    <video id="video" controls autoplay muted></video>
-    <br>
-    <button onclick="logout()">Đăng Xuất</button>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/movies">
+                <i class="fas fa-arrow-left"></i> Quay lại danh sách
+            </a>
+            <div class="d-flex">
+                <button class="btn btn-outline-light" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="video-container">
+            <div style="position: relative;">
+                <video id="video" controls autoplay></video>
+                <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+                </div>
+            </div>
+            
+            <div class="video-info">
+                <div class="video-title" id="videoTitle">
+                    <i class="fas fa-film"></i> Đang tải...
+                </div>
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <span class="quality-badge">
+                        <i class="fas fa-hd-video"></i> HLS Streaming
+                    </span>
+                    <span class="text-muted">
+                        <i class="fas fa-shield-alt"></i> Mã hóa AES-128
+                    </span>
+                    <span class="text-success" id="statusText">
+                        <i class="fas fa-circle"></i> Sẵn sàng
+                    </span>
+                </div>
+                
+                <div class="controls-bar">
+                    <button class="btn btn-custom" onclick="toggleFullscreen()">
+                        <i class="fas fa-expand"></i> Toàn màn hình
+                    </button>
+                    <button class="btn btn-custom" onclick="changeSpeed(0.5)">
+                        <i class="fas fa-backward"></i> 0.5x
+                    </button>
+                    <button class="btn btn-custom" onclick="changeSpeed(1.0)">
+                        <i class="fas fa-play"></i> 1x
+                    </button>
+                    <button class="btn btn-custom" onclick="changeSpeed(1.5)">
+                        <i class="fas fa-forward"></i> 1.5x
+                    </button>
+                    <button class="btn btn-custom" onclick="changeSpeed(2.0)">
+                        <i class="fas fa-fast-forward"></i> 2x
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // 1. LẤY TOKEN TỪ STORAGE (Do trang Login đã lưu)
+        // 1. LẤY TOKEN TỪ STORAGE
         var token = localStorage.getItem('user_token');
 
-        // 2. CHECK BẢO MẬT PHÍA CLIENT
-        // Nếu không có token -> Đuổi về trang login ngay
+        // 2. CHECK BẢO MẬT
         if (!token) {
             alert("Bạn chưa đăng nhập! Vui lòng đăng nhập để xem.");
             window.location.href = "/login-page";
         }
 
         var video = document.getElementById('video');
+        var loadingOverlay = document.getElementById('loadingOverlay');
         
-        // Link gốc từ DB (Vẫn là link cũ để test)
-        var baseUrl = 'http://localhost:3000/static/videos/streams/1765525464317-6474243225708/playlist.m3u8';
+        // 3. Lấy đường dẫn video từ localStorage (được set từ trang movie_detail)
+        var videoPath = localStorage.getItem('current_video_path');
+        var videoName = localStorage.getItem('current_video_name');
+
+        if (!videoPath) {
+            alert("Không tìm thấy video! Vui lòng chọn tập phim.");
+            window.location.href = "/movies";
+        }
+
+        // Update title
+        document.getElementById('videoTitle').textContent = videoName || 'Đang xem phim';
         
-        // Gắn token vào link
+        // Tạo full URL
+        var baseUrl = window.location.origin + videoPath;
         var videoSrc = baseUrl + "?token=" + token;
 
-        console.log("Token lấy từ Login:", token);
+        console.log("🎬 Đang load video:", videoPath);
+
+        // Show loading
+        loadingOverlay.style.display = 'flex';
+        document.getElementById('statusText').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tải...';
 
         if (Hls.isSupported()) {
             var hls = new Hls({
-                // Tự động gắn token vào mọi file con .ts
                 xhrSetup: function(xhr, url) {
                     if (url.indexOf("token=") === -1) {
                         var newUrl = url + (url.indexOf("?") === -1 ? "?" : "&") + "token=" + token;
@@ -46,32 +188,98 @@
                     }
                 }
             });
+            
             hls.loadSource(videoSrc);
             hls.attachMedia(video);
+            
             hls.on(Hls.Events.MANIFEST_PARSED, function() {
-                video.play().catch(e => console.log("Cần tương tác để phát"));
+                loadingOverlay.style.display = 'none';
+                document.getElementById('statusText').innerHTML = '<i class="fas fa-check-circle"></i> Đang phát';
+                video.play().catch(e => {
+                    console.log("Cần tương tác để phát");
+                    document.getElementById('statusText').innerHTML = '<i class="fas fa-hand-pointer"></i> Click để phát';
+                });
             });
             
-            // Xử lý khi Token hết hạn hoặc không hợp lệ (Lỗi 403 từ Server trả về)
             hls.on(Hls.Events.ERROR, function (event, data) {
-                 if(data.response && data.response.code === 403) {
-                     alert("Phiên đăng nhập hết hạn! Vui lòng đăng nhập lại.");
-                     logout(); // Xóa token và đá về trang login
-                 }
+                console.error("HLS Error:", data);
+                if(data.response && data.response.code === 403) {
+                    alert("Phiên đăng nhập hết hạn! Vui lòng đăng nhập lại.");
+                    logout();
+                } else if (data.fatal) {
+                    loadingOverlay.style.display = 'none';
+                    document.getElementById('statusText').innerHTML = '<i class="fas fa-exclamation-triangle"></i> Lỗi phát video';
+                    alert("Lỗi phát video! Vui lòng thử lại.");
+                }
+            });
+
+            // Update status when playing
+            video.addEventListener('playing', function() {
+                document.getElementById('statusText').innerHTML = '<i class="fas fa-play-circle"></i> Đang phát';
+            });
+
+            video.addEventListener('pause', function() {
+                document.getElementById('statusText').innerHTML = '<i class="fas fa-pause-circle"></i> Tạm dừng';
+            });
+
+            video.addEventListener('waiting', function() {
+                document.getElementById('statusText').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tải...';
             });
         }
         else if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = videoSrc;
             video.addEventListener('loadedmetadata', function() {
+                loadingOverlay.style.display = 'none';
+                document.getElementById('statusText').innerHTML = '<i class="fas fa-check-circle"></i> Đang phát';
                 video.play();
             });
         }
 
-        // Hàm đăng xuất
+        // Toggle fullscreen
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                video.requestFullscreen().catch(err => {
+                    console.log("Fullscreen error:", err);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Change playback speed
+        function changeSpeed(speed) {
+            video.playbackRate = speed;
+            document.getElementById('statusText').innerHTML = `<i class="fas fa-tachometer-alt"></i> Tốc độ ${speed}x`;
+        }
+
+        // Logout
         function logout() {
             localStorage.removeItem('user_token');
+            localStorage.removeItem('current_video_path');
+            localStorage.removeItem('current_video_name');
+            document.cookie = 'user_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
             window.location.href = "/login-page";
         }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            switch(e.key) {
+                case ' ':
+                    e.preventDefault();
+                    video.paused ? video.play() : video.pause();
+                    break;
+                case 'f':
+                    toggleFullscreen();
+                    break;
+                case 'ArrowRight':
+                    video.currentTime += 10;
+                    break;
+                case 'ArrowLeft':
+                    video.currentTime -= 10;
+                    break;
+            }
+        });
     </script>
+
 </body>
 </html>

@@ -1,0 +1,187 @@
+<%- include('partials/head') %>
+<%- include('partials/sidebar') %>
+
+<div class="flex-grow-1 p-4">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🎞️ Quản Lý Tập Phim</h2>
+        <a href="/admin-ui/episodes/upload" class="btn btn-primary">📤 Upload Tập Mới</a>
+    </div>
+
+    <!-- Bộ lọc phim -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label">Lọc theo phim:</label>
+                    <select class="form-select" id="filterMovie">
+                        <option value="">-- Tất cả phim --</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bảng danh sách tập -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table class="table table-hover table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Tên tập</th>
+                        <th>Thuộc phim</th>
+                        <th>Đường dẫn</th>
+                        <th>Ngày tạo</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="episodeTableBody">
+                    <tr>
+                        <td colspan="5" class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Đang tải...</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const token = localStorage.getItem('user_token');
+    let allEpisodes = [];
+    let allMovies = [];
+
+    // Load danh sách phim cho filter
+    async function loadMovies() {
+        try {
+            const res = await fetch('/admin/movie', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+
+            if (data.status) {
+                allMovies = data.data;
+                const select = document.getElementById('filterMovie');
+                
+                allMovies.forEach(movie => {
+                    const option = document.createElement('option');
+                    option.value = movie._id;
+                    option.textContent = movie.Name;
+                    select.appendChild(option);
+                });
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    // Load tất cả tập phim
+    async function loadAllEpisodes() {
+        try {
+            const tbody = document.getElementById('episodeTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center">⏳ Đang tải...</td></tr>';
+
+            allEpisodes = [];
+
+            // Load tập phim của từng phim
+            for (const movie of allMovies) {
+                const res = await fetch('/admin/episode/list/' + movie._id, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+
+                if (data.status && data.data.length > 0) {
+                    data.data.forEach(ep => {
+                        ep.MovieInfo = movie; // Thêm thông tin phim
+                        allEpisodes.push(ep);
+                    });
+                }
+            }
+
+            renderEpisodes(allEpisodes);
+        } catch (err) {
+            console.error(err);
+            document.getElementById('episodeTableBody').innerHTML = 
+                '<tr><td colspan="5" class="text-center text-danger">❌ Lỗi tải dữ liệu</td></tr>';
+        }
+    }
+
+    // Hiển thị danh sách tập
+    function renderEpisodes(episodes) {
+        const tbody = document.getElementById('episodeTableBody');
+        
+        if (episodes.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Chưa có tập phim nào</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = '';
+        episodes.forEach(ep => {
+            const date = new Date(ep.CreatedTime).toLocaleString('vi-VN');
+            const row = `
+                <tr>
+                    <td><strong>${ep.Name}</strong></td>
+                    <td>${ep.MovieInfo?.Name || 'N/A'}</td>
+                    <td><code class="text-primary">${ep.Path}</code></td>
+                    <td>${date}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="playVideo('${ep.Path}')">▶️ Xem</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteEpisode('${ep._id}', '${ep.Name}')">🗑️ Xóa</button>
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    }
+
+    // Lọc theo phim
+    document.getElementById('filterMovie').addEventListener('change', function() {
+        const movieId = this.value;
+        
+        if (movieId === '') {
+            renderEpisodes(allEpisodes);
+        } else {
+            const filtered = allEpisodes.filter(ep => ep.MovieInfo._id === movieId);
+            renderEpisodes(filtered);
+        }
+    });
+
+    // Xem video
+    function playVideo(path) {
+        window.open(path, '_blank');
+    }
+
+    // Xóa tập phim
+    async function deleteEpisode(id, name) {
+        if (!confirm(`Bạn có chắc muốn xóa "${name}"?`)) return;
+
+        try {
+            const res = await fetch('/admin/episode/delete/' + id, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+
+            if (data.status) {
+                alert('✅ Đã xóa!');
+                loadAllEpisodes();
+            } else {
+                alert('❌ ' + data.message);
+            }
+        } catch (err) {
+            alert('Lỗi kết nối!');
+        }
+    }
+
+    // Init
+    (async function() {
+        await loadMovies();
+        await loadAllEpisodes();
+    })();
+</script>
+
+<%- include('partials/footer') %>

@@ -68,7 +68,7 @@ class UserService {
         }
 
         // Kiểm tra role để xác định trang redirect
-        var redirectUrl = "/watch-movie"; // Mặc định User
+        var redirectUrl = "/movies"; // Mặc định User đến trang danh sách phim
         var isAdmin = false;
 
         console.log("User RoleIds:", user.RoleIds);

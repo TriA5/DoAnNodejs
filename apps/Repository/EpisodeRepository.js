@@ -16,5 +16,10 @@ class EpisodeRepository {
         const mId = typeof movieId === 'string' ? new ObjectId(movieId) : movieId;
         return await this.context.collection("episode").find({ MovieId: mId }).toArray();
     }
+
+    async deleteEpisode(id) {
+        const objectId = typeof id === 'string' ? new ObjectId(id) : id;
+        return await this.context.collection("episode").deleteOne({ _id: objectId }, { session: this.session });
+    }
 }
 module.exports = EpisodeRepository;

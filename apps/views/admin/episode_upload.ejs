@@ -1,0 +1,177 @@
+<%- include('partials/head') %>
+<%- include('partials/sidebar') %>
+
+<div class="flex-grow-1 p-4">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🎞️ Upload Tập Phim</h2>
+        <a href="/admin-ui/episodes" class="btn btn-secondary">← Quay lại</a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form id="uploadForm" enctype="multipart/form-data">
+                
+                <!-- Chọn phim -->
+                <div class="mb-3">
+                    <label class="form-label">Chọn Phim <span class="text-danger">*</span></label>
+                    <select class="form-select" id="movieSelect" required>
+                        <option value="">-- Chọn phim --</option>
+                    </select>
+                </div>
+
+                <!-- Tên tập -->
+                <div class="mb-3">
+                    <label class="form-label">Tên Tập <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="episodeName" placeholder="VD: Tập 1, Full Movie..." required>
+                </div>
+
+                <!-- Chọn file video -->
+                <div class="mb-3">
+                    <label class="form-label">File Video <span class="text-danger">*</span></label>
+                    <input type="file" class="form-control" id="videoFile" accept="video/*" required>
+                    <small class="text-muted">Hỗ trợ: MP4, MKV, AVI... (Tối đa 2GB)</small>
+                </div>
+
+                <!-- Progress Bar -->
+                <div id="progressContainer" class="mb-3" style="display: none;">
+                    <label class="form-label">Đang tải lên...</label>
+                    <div class="progress">
+                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%">0%</div>
+                    </div>
+                </div>
+
+                <!-- Nút submit -->
+                <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                    📤 Upload và Chuyển Đổi
+                </button>
+                
+                <div id="statusMessage" class="mt-3"></div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const token = localStorage.getItem('user_token');
+
+    // Load danh sách phim
+    async function loadMovies() {
+        try {
+            const res = await fetch('/admin/movie', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+
+            if (data.status) {
+                const select = document.getElementById('movieSelect');
+                data.data.forEach(movie => {
+                    const option = document.createElement('option');
+                    option.value = movie._id;
+                    option.textContent = movie.Name;
+                    select.appendChild(option);
+                });
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Không thể tải danh sách phim');
+        }
+    }
+
+    // Xử lý upload
+    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const movieId = document.getElementById('movieSelect').value;
+        const episodeName = document.getElementById('episodeName').value;
+        const videoFile = document.getElementById('videoFile').files[0];
+
+        if (!movieId || !episodeName || !videoFile) {
+            alert('Vui lòng điền đầy đủ thông tin!');
+            return;
+        }
+
+        // Kiểm tra kích thước file (2GB = 2147483648 bytes)
+        if (videoFile.size > 2147483648) {
+            alert('❌ File quá lớn! Tối đa 2GB');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('video', videoFile);
+        formData.append('MovieId', movieId);
+        formData.append('Name', episodeName);
+
+        const submitBtn = document.getElementById('submitBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const statusMessage = document.getElementById('statusMessage');
+
+        // Disable nút submit
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '⏳ Đang xử lý...';
+        progressContainer.style.display = 'block';
+        statusMessage.innerHTML = '<div class="alert alert-info">⏳ Đang upload và chuyển đổi video... Vui lòng đợi!</div>';
+
+        try {
+            const xhr = new XMLHttpRequest();
+
+            // Theo dõi tiến trình upload
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = percent + '%';
+                    progressBar.textContent = percent + '%';
+                }
+            });
+
+            // Xử lý khi hoàn thành
+            xhr.addEventListener('load', function() {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.status) {
+                        statusMessage.innerHTML = '<div class="alert alert-success">✅ Upload thành công! Video đã được chuyển đổi.</div>';
+                        
+                        // Reset form sau 2s
+                        setTimeout(() => {
+                            document.getElementById('uploadForm').reset();
+                            progressContainer.style.display = 'none';
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = '📤 Upload và Chuyển Đổi';
+                            statusMessage.innerHTML = '';
+                        }, 2000);
+                    } else {
+                        throw new Error(response.message);
+                    }
+                } else {
+                    throw new Error('Lỗi server: ' + xhr.status);
+                }
+            });
+
+            // Xử lý lỗi
+            xhr.addEventListener('error', function() {
+                statusMessage.innerHTML = '<div class="alert alert-danger">❌ Lỗi kết nối!</div>';
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '📤 Upload và Chuyển Đổi';
+            });
+
+            // Gửi request
+            xhr.open('POST', '/admin/episode/create');
+            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            xhr.send(formData);
+
+        } catch (error) {
+            console.error(error);
+            statusMessage.innerHTML = '<div class="alert alert-danger">❌ ' + error.message + '</div>';
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '📤 Upload và Chuyển Đổi';
+        }
+    });
+
+    // Load movies khi trang vừa mở
+    loadMovies();
+</script>
+
+<%- include('partials/footer') %>

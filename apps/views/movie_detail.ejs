@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi Tiết Phim</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #0f0f0f;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            background: rgba(0,0,0,0.9) !important;
+        }
+        .movie-header {
+            position: relative;
+            height: 500px;
+            background-size: cover;
+            background-position: center;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        .movie-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to top, #0f0f0f 0%, transparent 100%);
+            display: flex;
+            align-items: flex-end;
+            padding: 40px;
+        }
+        .movie-poster {
+            width: 200px;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .movie-details {
+            margin-left: 30px;
+        }
+        .movie-title {
+            font-size: 3rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.8);
+        }
+        .movie-meta {
+            font-size: 1.1rem;
+            margin: 10px 0;
+        }
+        .badge-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 8px 15px;
+            font-size: 1rem;
+            margin-right: 10px;
+        }
+        .episodes-section {
+            margin-top: 40px;
+        }
+        .episode-card {
+            background: #1a1a1a;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        .episode-card:hover {
+            background: #2a2a2a;
+            border-color: #667eea;
+            transform: translateX(10px);
+        }
+        .episode-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .play-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            transition: transform 0.3s;
+        }
+        .play-btn:hover {
+            transform: scale(1.05);
+        }
+        .content-section {
+            background: #1a1a1a;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/movies">
+                <i class="fas fa-arrow-left"></i> Quay lại
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container py-4">
+        
+        <!-- Loading -->
+        <div id="loading" class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Đang tải...</span>
+            </div>
+        </div>
+
+        <!-- Movie Detail -->
+        <div id="movieDetail" style="display: none;">
+            
+            <!-- Movie Header with Background -->
+            <div class="movie-header" id="movieHeader">
+                <div class="movie-overlay">
+                    <img id="moviePoster" src="" class="movie-poster" alt="">
+                    <div class="movie-details">
+                        <h1 class="movie-title" id="movieTitle"></h1>
+                        <div class="movie-meta">
+                            <span class="badge badge-custom" id="movieCategory"></span>
+                            <span class="badge bg-warning text-dark" id="movieYear"></span>
+                            <span class="badge bg-info" id="movieType"></span>
+                        </div>
+                        <div class="movie-meta">
+                            <i class="fas fa-eye"></i> <span id="movieViews"></span> lượt xem
+                            <span class="ms-3"><i class="fas fa-clock"></i> <span id="movieTime"></span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="content-section">
+                <h3><i class="fas fa-info-circle"></i> Nội dung phim</h3>
+                <p id="movieContent" class="text-muted"></p>
+            </div>
+
+            <!-- Episodes -->
+            <div class="episodes-section">
+                <h3 class="mb-4"><i class="fas fa-list"></i> Danh Sách Tập Phim</h3>
+                <div id="episodesList">
+                    <!-- Episodes will be loaded here -->
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const token = localStorage.getItem('user_token');
+        if (!token) {
+            alert("Vui lòng đăng nhập!");
+            window.location.href = "/login-page";
+        }
+
+        // Get movie ID from URL
+        const movieId = window.location.pathname.split('/').pop();
+
+        // Load movie detail
+        async function loadMovieDetail() {
+            try {
+                const res = await fetch('/movie/detail/' + movieId, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+
+                if (data.status) {
+                    const movie = data.data.movie;
+                    const episodes = data.data.episodes;
+
+                    // Set movie info
+                    document.getElementById('movieTitle').textContent = movie.Name;
+                    document.getElementById('moviePoster').src = movie.Thumb || '/static/images/default-movie.jpg';
+                    document.getElementById('movieHeader').style.backgroundImage = `url(${movie.Thumb || '/static/images/default-movie.jpg'})`;
+                    document.getElementById('movieCategory').textContent = movie.CategoryInfo?.[0]?.Name || 'Chưa phân loại';
+                    document.getElementById('movieYear').textContent = movie.Year || 'N/A';
+                    document.getElementById('movieType').textContent = movie.Type === 'series' ? 'Phim bộ' : 'Phim lẻ';
+                    document.getElementById('movieViews').textContent = movie.View || 0;
+                    document.getElementById('movieTime').textContent = movie.Time || 'Đang cập nhật';
+                    document.getElementById('movieContent').textContent = movie.Content || 'Chưa có mô tả';
+
+                    // Render episodes
+                    renderEpisodes(episodes);
+
+                    // Show movie detail
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('movieDetail').style.display = 'block';
+
+                    // Increase view count
+                    increaseView(movieId);
+                } else {
+                    alert('Không tìm thấy phim!');
+                    window.location.href = '/movies';
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Lỗi tải dữ liệu!');
+            }
+        }
+
+        // Render episodes
+        function renderEpisodes(episodes) {
+            const list = document.getElementById('episodesList');
+            
+            if (episodes.length === 0) {
+                list.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> Phim chưa có tập nào!
+                    </div>
+                `;
+                return;
+            }
+
+            episodes.forEach((ep, index) => {
+                const card = `
+                    <div class="episode-card" onclick="watchEpisode('${ep.Path}', '${ep.Name}')">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="episode-number">${index + 1}</span>
+                                <span class="ms-3" style="font-size: 1.2rem;">${ep.Name}</span>
+                            </div>
+                            <button class="btn btn-primary play-btn">
+                                <i class="fas fa-play"></i> Xem ngay
+                            </button>
+                        </div>
+                    </div>
+                `;
+                list.innerHTML += card;
+            });
+        }
+
+        // Watch episode
+        function watchEpisode(path, name) {
+            // Save to localStorage for player page
+            localStorage.setItem('current_video_path', path);
+            localStorage.setItem('current_video_name', name);
+            window.location.href = '/player';
+        }
+
+        // Increase view count
+        async function increaseView(movieId) {
+            try {
+                await fetch('/movie/view/' + movieId, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('user_token');
+            document.cookie = 'user_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            window.location.href = "/login-page";
+        }
+
+        // Init
+        loadMovieDetail();
+    </script>
+
+</body>
+</html>

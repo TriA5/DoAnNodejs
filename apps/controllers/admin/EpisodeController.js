@@ -21,7 +21,35 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
+// 1. Lấy danh sách tập theo MovieId
+router.get("/list/:movieId", async function(req, res) {
+    try {
+        var client = await DatabaseConnection.getMongoClient();
+        var database = client.db(Config.mongodb.database);
+        var repo = new EpisodeRepository(database);
 
+        var episodes = await repo.getEpisodesByMovie(req.params.movieId);
+        res.json({ status: true, data: episodes });
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
+    }
+});
+
+// 2. Xóa tập phim
+router.delete("/delete/:id", async function(req, res) {
+    try {
+        var client = await DatabaseConnection.getMongoClient();
+        var database = client.db(Config.mongodb.database);
+        var repo = new EpisodeRepository(database);
+
+        await repo.deleteEpisode(req.params.id);
+        res.json({ status: true, message: "Đã xóa tập phim" });
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
+    }
+});
+
+// 3. Upload và convert video
 router.post("/create", upload.single('video'), async function(req, res) {
     try {
         if(!req.file) return res.status(400).json({message: "Chưa chọn file video!"});
