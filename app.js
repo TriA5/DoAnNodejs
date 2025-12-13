@@ -6,6 +6,10 @@ global.__basedir = __dirname;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// 1.5. Cookie parser để đọc cookie
+var cookieParser = require('cookie-parser');
+app.use(cookieParser());
+
 // 2. Import Middleware bảo vệ video
 var VideoAuthMiddleware = require(__dirname + "/apps/Middlewares/VideoAuthMiddleware");
 

@@ -44,13 +44,19 @@
 
                 if (data.status) {
                     // 2. ĐĂNG NHẬP THÀNH CÔNG -> LƯU TOKEN
-                    // Lưu vào localStorage để dùng lâu dài
                     localStorage.setItem('user_token', data.data.token);
                     
-                    alert("Đăng nhập thành công! Chuyển sang trang phim...");
+                    // Lưu token vào cookie luôn để AdminMiddleware đọc được
+                    document.cookie = "user_token=" + data.data.token + "; path=/; max-age=86400"; // 24h
                     
-                    // 3. Chuyển hướng sang trang xem phim
-                    window.location.href = "/watch-movie";
+                    // 3. Lấy redirectUrl từ response (Admin hoặc User)
+                    const redirectUrl = data.data.redirectUrl || "/watch-movie";
+                    const role = data.data.isAdmin ? "Admin" : "User";
+                    
+                    alert(`Đăng nhập thành công với quyền ${role}!`);
+                    
+                    // 4. Redirect đến trang phù hợp với role
+                    window.location.href = redirectUrl;
                 } else {
                     msg.innerText = data.message;
                 }

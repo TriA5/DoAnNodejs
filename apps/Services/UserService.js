@@ -54,28 +54,77 @@ class UserService {
     async loginUser(email, password) {
 
         this.userRepository = new UserRepository(this.database, null);
+        var RoleRepository = require(global.__basedir + "/apps/Repository/RoleRepository");
+        var roleRepository = new RoleRepository(this.database, null);
 
         var user = await this.userRepository.getUserByEmail(email);
         if (!user) {
             throw new Error("Email hoặc mật khẩu không đúng!");
         }
 
-
         var isMatch = await bcrypt.compare(password, user.PasswordHash);
         if (!isMatch) {
             throw new Error("Email hoặc mật khẩu không đúng!");
         }
 
+        // Kiểm tra role để xác định trang redirect
+        var redirectUrl = "/watch-movie"; // Mặc định User
+        var isAdmin = false;
+
+        console.log("User RoleIds:", user.RoleIds);
+        console.log("Type:", typeof user.RoleIds);
+
+        // Xử lý RoleIds có thể là string hoặc array
+        let roleIds = [];
+        if (typeof user.RoleIds === 'string') {
+            // Nếu là string, chuyển thành array
+            roleIds = [user.RoleIds];
+        } else if (Array.isArray(user.RoleIds)) {
+            roleIds = user.RoleIds;
+        }
+
+        console.log("Processed roleIds:", roleIds);
+
+        if (roleIds.length > 0) {
+            for (let roleId of roleIds) {
+                try {
+                    // Kiểm tra roleId có phải là string 24 ký tự hex không
+                    if (!roleId || typeof roleId !== 'string' || roleId.length !== 24) {
+                        console.log("Invalid roleId format:", roleId);
+                        continue;
+                    }
+                    
+                    var role = await roleRepository.getRoleById(roleId);
+                    console.log("Found role:", role);
+                    
+                    if (role && role.Name === "Admin") {
+                        isAdmin = true;
+                        redirectUrl = "/admin-ui/movies";
+                        console.log("✅ User is Admin!");
+                        break;
+                    }
+                } catch (err) {
+                    console.log("Error checking role:", err.message);
+                }
+            }
+        }
+
         var token = jwt.sign(
-            { _id: user._id, RoleIds: user.RoleIds, Email: user.Email },
-            Config.jwt_secret || "SecretKey123", 
+            { _id: user._id, 
+              RoleIds: user.RoleIds, 
+              Email: user.Email,
+              isAdmin: isAdmin
+            },
+              Config.jwt_secret || "SecretKey123", 
             { expiresIn: '24h' } 
         );
 
         delete user.PasswordHash;
         return {
             user: user,
-            token: token
+            token: token,
+            redirectUrl: redirectUrl,
+            isAdmin: isAdmin
         };
     }
 
