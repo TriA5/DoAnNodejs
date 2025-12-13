@@ -45,7 +45,8 @@
                                 <td><strong>${cat.Name}</strong></td>
                                 <td>${cat.Description || "Không có mô tả"}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-danger" onclick="deleteCategory('${cat._id}')">Xóa</button>
+                                    <button class="btn btn-sm btn-warning me-1" onclick='editCategory(${JSON.stringify(cat)})'>✏️ Sửa</button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteCategory('${cat._id}')">🗑️ Xóa</button>
                                 </td>
                             </tr>
                         `;
@@ -79,9 +80,80 @@
             }
         }
 
+        // 3. Mở modal để sửa
+        function editCategory(cat) {
+            document.getElementById('editCategoryId').value = cat._id;
+            document.getElementById('editCategoryName').value = cat.Name;
+            document.getElementById('editCategoryDesc').value = cat.Description || '';
+            
+            const modal = new bootstrap.Modal(document.getElementById('editCategoryModal'));
+            modal.show();
+        }
+
+        // 4. Lưu chỉnh sửa
+        async function saveEdit() {
+            const id = document.getElementById('editCategoryId').value;
+            const name = document.getElementById('editCategoryName').value.trim();
+            const desc = document.getElementById('editCategoryDesc').value.trim();
+
+            if(!name) {
+                alert('Tên thể loại không được trống!');
+                return;
+            }
+
+            try {
+                const res = await fetch('/admin/category/update/' + id, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ Name: name, Description: desc })
+                });
+                const data = await res.json();
+
+                if(data.status) {
+                    alert('✅ Cập nhật thành công!');
+                    bootstrap.Modal.getInstance(document.getElementById('editCategoryModal')).hide();
+                    loadCategories();
+                } else {
+                    alert('❌ ' + data.message);
+                }
+            } catch(e) {
+                alert('Lỗi kết nối!');
+            }
+        }
+
         loadCategories();
     </script>
 
+</div>
+
+<!-- Modal Sửa Thể Loại -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">✏️ Chỉnh sửa Thể Loại</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editCategoryId">
+                <div class="mb-3">
+                    <label class="form-label">Tên thể loại <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="editCategoryName" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Mô tả</label>
+                    <textarea class="form-control" id="editCategoryDesc" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" onclick="saveEdit()">💾 Lưu thay đổi</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <%- include('partials/footer') %>

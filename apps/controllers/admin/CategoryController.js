@@ -29,7 +29,23 @@ router.post("/create", async function(req, res) {
     }
 });
 
-// 3. Xóa
+// 3. Cập nhật
+router.put("/update/:id", async function(req, res) {
+    try {
+        if(!req.body.Name) {
+            return res.status(400).json({ status: false, message: "Tên thể loại không được trống" });
+        }
+
+        var service = await new CategoryService().init();
+        var result = await service.updateCategory(req.params.id, req.body.Name, req.body.Description);
+        
+        res.json({ status: true, message: "Cập nhật thành công", data: result });
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
+    }
+});
+
+// 4. Xóa
 router.delete("/delete/:id", async function(req, res) {
     try {
         var service = await new CategoryService().init();

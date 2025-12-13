@@ -42,6 +42,29 @@ class CategoryService {
         }
     }
 
+    // Cập nhật (Cần Transaction)
+    async updateCategory(id, name, description) {
+        const session = this.client.startSession();
+        try {
+            session.startTransaction();
+            this.categoryRepository = new CategoryRepository(this.database, session);
+            
+            var updateData = {
+                Name: name,
+                Description: description
+            };
+            var result = await this.categoryRepository.updateCategory(id, updateData);
+            
+            await session.commitTransaction();
+            return result;
+        } catch (error) {
+            await session.abortTransaction();
+            throw error;
+        } finally {
+            await session.endSession();
+        }
+    }
+
     // Xóa (Cần Transaction)
     async deleteCategory(id) {
         const session = this.client.startSession();
