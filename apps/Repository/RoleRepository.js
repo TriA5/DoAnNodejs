@@ -24,6 +24,10 @@ class RoleRepository {
         return await this.context.collection("role").findOne({ _id: objectId });
     }
 
+    async getRoleByName(name) {
+        return await this.context.collection("role").findOne({ Name: name });
+    }
+
     async updateRole(id, data) {
         const objectId = typeof id === 'string' ? new ObjectId(id) : id;
         return await this.context

@@ -1,39 +1,432 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-    <title>Đăng Nhập Xem Phim</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập | CinemaHub</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; padding-top: 100px; }
-        form { border: 1px solid #ccc; padding: 20px; border-radius: 5px; width: 300px; }
-        input { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background: #28a745; color: white; border: none; cursor: pointer; }
-        button:hover { background: #218838; }
-        .error { color: red; text-align: center; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 25%, #FFD93D 50%, #6BCF7F 75%, #4D96FF 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Animated circles background */
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            animation: float 20s infinite;
+        }
+
+        .circle:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .circle:nth-child(2) {
+            width: 60px;
+            height: 60px;
+            top: 70%;
+            left: 80%;
+            animation-delay: 2s;
+        }
+
+        .circle:nth-child(3) {
+            width: 100px;
+            height: 100px;
+            top: 50%;
+            left: 5%;
+            animation-delay: 4s;
+        }
+
+        .circle:nth-child(4) {
+            width: 70px;
+            height: 70px;
+            top: 20%;
+            left: 85%;
+            animation-delay: 1s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0.3;
+            }
+            50% {
+                transform: translateY(-50px) rotate(180deg);
+                opacity: 0.6;
+            }
+        }
+
+        .home-btn {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            z-index: 100;
+        }
+
+        .home-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 450px;
+            padding: 50px 40px;
+            position: relative;
+            z-index: 10;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo i {
+            font-size: 3rem;
+            background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .logo h1 {
+            font-size: 2rem;
+            color: #333;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .logo p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .toggle-container {
+            display: flex;
+            background: #f0f0f0;
+            border-radius: 50px;
+            padding: 5px;
+            margin-bottom: 30px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+
+        .toggle-btn.active {
+            background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+            color: white;
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .form-container {
+            position: relative;
+        }
+
+        .form {
+            display: none;
+        }
+
+        .form.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #FF6B6B;
+            font-size: 1.1rem;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #FF6B6B;
+            box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.1);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(255, 107, 107, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .message {
+            text-align: center;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .message.error {
+            background: #ffe6e6;
+            color: #d32f2f;
+            border: 1px solid #ffcdd2;
+        }
+
+        .message.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+
+        .demo-accounts {
+            background: #fff9e6;
+            border: 2px dashed #FFD93D;
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 0.85rem;
+        }
+
+        .demo-accounts h4 {
+            color: #FF8E53;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .demo-accounts p {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        .demo-accounts strong {
+            color: #FF6B6B;
+        }
+
+        @media (max-width: 500px) {
+            .container {
+                width: 90%;
+                padding: 30px 25px;
+            }
+
+            .home-btn {
+                top: 15px;
+                left: 15px;
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+        }
     </style>
 </head>
 <body>
+    
+    <div class="circle"></div>
+    <div class="circle"></div>
+    <div class="circle"></div>
+    <div class="circle"></div>
 
-    <form id="loginForm">
-        <h2 style="text-align: center;">Đăng Nhập</h2>
-        <p id="message" class="error"></p>
-        
-        <input type="email" id="email" placeholder="Email" value="admin@gmail.com" required>
-        <input type="password" id="password" placeholder="Mật khẩu" value="123456" required>
-        
-        <button type="submit">Đăng nhập</button>
-    </form>
+    <a href="/" class="home-btn">
+        <i class="fas fa-home"></i> Trang chủ
+    </a>
+
+    <div class="container">
+        <div class="logo">
+            <i class="fas fa-film"></i>
+            <h1>CinemaHub</h1>
+            <p>Chào mừng bạn quay trở lại!</p>
+        </div>
+
+        <!-- Toggle buttons -->
+        <div class="toggle-container">
+            <button class="toggle-btn active" onclick="showLogin()">
+                <i class="fas fa-sign-in-alt"></i> Đăng nhập
+            </button>
+            <button class="toggle-btn" onclick="showRegister()">
+                <i class="fas fa-user-plus"></i> Đăng ký
+            </button>
+        </div>
+
+        <!-- Message alert -->
+        <div id="message" class="message"></div>
+
+        <!-- Login Form -->
+        <div class="form-container">
+            <form id="loginForm" class="form active">
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="loginEmail" placeholder="Email của bạn" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="loginPassword" placeholder="Mật khẩu" required>
+                </div>
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-sign-in-alt"></i> Đăng nhập ngay
+                </button>
+
+               
+            </form>
+
+            <!-- Register Form -->
+            <form id="registerForm" class="form">
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="registerEmail" placeholder="Email của bạn" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="registerPassword" placeholder="Mật khẩu (tối thiểu 6 ký tự)" minlength="6" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="registerConfirmPassword" placeholder="Xác nhận mật khẩu" minlength="6" required>
+                </div>
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-user-plus"></i> Đăng ký ngay
+                </button>
+            </form>
+        </div>
+    </div>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const message = document.getElementById('message');
+
+        // Toggle between login and register
+        function showLogin() {
+            loginForm.classList.add('active');
+            registerForm.classList.remove('active');
+            document.querySelectorAll('.toggle-btn')[0].classList.add('active');
+            document.querySelectorAll('.toggle-btn')[1].classList.remove('active');
+            hideMessage();
+        }
+
+        function showRegister() {
+            registerForm.classList.add('active');
+            loginForm.classList.remove('active');
+            document.querySelectorAll('.toggle-btn')[1].classList.add('active');
+            document.querySelectorAll('.toggle-btn')[0].classList.remove('active');
+            hideMessage();
+        }
+
+        // Show message
+        function showMessage(text, type) {
+            message.textContent = text;
+            message.className = 'message ' + type;
+            message.style.display = 'block';
+        }
+
+        function hideMessage() {
+            message.style.display = 'none';
+        }
+
+        // Login handler
+        loginForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const msg = document.getElementById('message');
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
 
             try {
-                // 1. Gọi API Login thật của bạn
-                // Lưu ý: Đường dẫn phải đúng với API bạn khai báo trong index.js (/login hoặc /auth/login)
                 const res = await fetch('/login', { 
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -43,26 +436,67 @@
                 const data = await res.json();
 
                 if (data.status) {
-                    // 2. ĐĂNG NHẬP THÀNH CÔNG -> LƯU TOKEN
                     localStorage.setItem('user_token', data.data.token);
+                    document.cookie = "user_token=" + data.data.token + "; path=/; max-age=86400";
                     
-                    // Lưu token vào cookie luôn để AdminMiddleware đọc được
-                    document.cookie = "user_token=" + data.data.token + "; path=/; max-age=86400"; // 24h
+                    showMessage('✅ Đăng nhập thành công! Đang chuyển hướng...', 'success');
                     
-                    // 3. Lấy redirectUrl từ response (Admin hoặc User)
-                    const redirectUrl = data.data.redirectUrl || "/watch-movie";
-                    const role = data.data.isAdmin ? "Admin" : "User";
-                    
-                    alert(`Đăng nhập thành công với quyền ${role}!`);
-                    
-                    // 4. Redirect đến trang phù hợp với role
-                    window.location.href = redirectUrl;
+                    setTimeout(() => {
+                        window.location.href = data.data.redirectUrl || "/movies";
+                    }, 1000);
                 } else {
-                    msg.innerText = data.message;
+                    showMessage('❌ ' + data.message, 'error');
                 }
             } catch (err) {
                 console.error(err);
-                msg.innerText = "Lỗi kết nối server!";
+                showMessage('❌ Lỗi kết nối server!', 'error');
+            }
+        });
+
+        // Register handler
+        registerForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerConfirmPassword').value;
+
+            // Validate password match
+            if (password !== confirmPassword) {
+                showMessage('❌ Mật khẩu xác nhận không khớp!', 'error');
+                return;
+            }
+
+            // Validate password length
+            if (password.length < 6) {
+                showMessage('❌ Mật khẩu phải có ít nhất 6 ký tự!', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch('/register', { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ Email: email, Password: password })
+                });
+
+                const data = await res.json();
+
+                if (data.status) {
+                    showMessage('✅ Đăng ký thành công! Vui lòng đăng nhập.', 'success');
+                    
+                    // Clear form and switch to login
+                    setTimeout(() => {
+                        registerForm.reset();
+                        showLogin();
+                        document.getElementById('loginEmail').value = email;
+                    }, 1500);
+                } else {
+                    showMessage('❌ ' + data.message, 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showMessage('❌ Lỗi kết nối server!', 'error');
             }
         });
     </script>

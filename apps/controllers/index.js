@@ -80,7 +80,7 @@ router.get("/admin-ui/episodes/upload", AdminMiddleware, function(req, res){
 
 // Trang chủ
 router.get("/", function(req, res){
-    res.json({"message": "this is index page"});
+    res.render("landing");
 });
 
 module.exports = router;

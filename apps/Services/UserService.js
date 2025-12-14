@@ -30,11 +30,24 @@ class UserService {
                 throw new Error("Email này đã được sử dụng!");
             }
 
+            // 2. Lấy User Role ID từ database
+            var RoleRepository = require(global.__basedir + "/apps/Repository/RoleRepository");
+            var roleRepository = new RoleRepository(this.database, session);
+            var userRole = await roleRepository.getRoleByName("User");
+            
+            if (!userRole) {
+                throw new Error("Không tìm thấy role User trong hệ thống!");
+            }
+
             var user = new User();
-            user.Username = data.Username;
+            // Nhận Username từ request, nếu không có thì lấy từ email
+            user.Username = data.Username || data.Email.split('@')[0];
             user.Email = data.Email;
             user.Avatar = data.Avatar || ""; 
-            user.RoleIds = data.RoleIds || [];
+            
+            // QUAN TRỌNG: Luôn gán role User, KHÔNG dùng RoleIds từ client
+            // Điều này đảm bảo người dùng không thể tự đăng ký làm Admin
+            user.RoleIds = [userRole._id.toString()];
 
             const salt = await bcrypt.genSalt(10);
             user.PasswordHash = await bcrypt.hash(data.Password, salt);
