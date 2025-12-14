@@ -14,7 +14,10 @@ router.use("/", UserController);
 // --- 2. ROUTER MOVIE (USER) ---
 router.use("/movie", AuthMiddleware, require("./MovieController"));
 
-// --- 3. ROUTER ADMIN ---
+// --- 3. ROUTER COMMENT (USER) ---
+router.use("/comment", AuthMiddleware, require("./CommentController"));
+
+// --- 4. ROUTER ADMIN ---
 router.use("/admin", AuthMiddleware);
 router.use("/admin/role", require("./admin/RoleController"));
 router.use("/admin/category", require("./admin/CategoryController"));
@@ -22,7 +25,7 @@ router.use("/admin/movie", require("./admin/MovieController"));
 router.use("/admin/episode", require("./admin/EpisodeController"));
 
 
-// --- 4. CÁC TRANG GIAO DIỆN (FRONTEND) ---
+// --- 5. CÁC TRANG GIAO DIỆN (FRONTEND) ---
 
 router.get("/login-page", function(req, res){
     res.render("login");

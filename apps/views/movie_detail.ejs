@@ -98,6 +98,81 @@
             padding: 30px;
             margin-top: 30px;
         }
+        
+        /* Comment Section */
+        .comment-section {
+            background: #1a1a1a;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+        }
+        
+        .comment-form {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .comment-form textarea {
+            width: 100%;
+            background: #1a1a1a;
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 15px;
+            color: white;
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .comment-form textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .comment-item {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 3px solid #667eea;
+        }
+        
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .comment-author {
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .comment-date {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .comment-content {
+            color: #ddd;
+            line-height: 1.6;
+        }
+        
+        .comment-delete {
+            background: #dc3545;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .comment-delete:hover {
+            background: #c82333;
+        }
     </style>
 </head>
 <body>
@@ -166,6 +241,27 @@
                 <h3 class="mb-4"><i class="fas fa-list"></i> Danh Sách Tập Phim</h3>
                 <div id="episodesList">
                     <!-- Episodes will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Comments Section -->
+            <div class="comment-section">
+                <h3 class="mb-4"><i class="fas fa-comments"></i> Bình Luận (<span id="commentCount">0</span>)</h3>
+                
+                <!-- Comment Form -->
+                <div class="comment-form">
+                    <h5 class="mb-3">Viết bình luận của bạn</h5>
+                    <textarea id="commentInput" placeholder="Nhập bình luận của bạn..."></textarea>
+                    <button class="btn btn-primary mt-3" onclick="postComment()">
+                        <i class="fas fa-paper-plane"></i> Gửi bình luận
+                    </button>
+                </div>
+
+                <!-- Comments List -->
+                <div id="commentsList">
+                    <div class="text-center text-muted">
+                        <i class="fas fa-spinner fa-spin"></i> Đang tải bình luận...
+                    </div>
                 </div>
             </div>
 
@@ -284,8 +380,132 @@
             window.location.href = "/login-page";
         }
 
+        // === COMMENT FUNCTIONS ===
+        let currentUserId = null;
+
+        // Load comments
+        async function loadComments() {
+            try {
+                const res = await fetch('/comment/movie/' + movieId, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+
+                if (data.status) {
+                    renderComments(data.data);
+                    document.getElementById('commentCount').textContent = data.data.length;
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('commentsList').innerHTML = 
+                    '<div class="text-danger">Lỗi tải bình luận</div>';
+            }
+        }
+
+        // Render comments
+        function renderComments(comments) {
+            const list = document.getElementById('commentsList');
+            
+            if (comments.length === 0) {
+                list.innerHTML = '<div class="text-muted text-center">Chưa có bình luận nào. Hãy là người đầu tiên!</div>';
+                return;
+            }
+
+            // Get current user ID from token
+            const tokenParts = token.split('.');
+            const payload = JSON.parse(atob(tokenParts[1]));
+            currentUserId = payload._id;
+
+            list.innerHTML = '';
+            comments.forEach(comment => {
+                const date = new Date(comment.CreatedAt).toLocaleString('vi-VN');
+                const username = comment.UserInfo?.[0]?.Username || comment.UserInfo?.[0]?.Email || 'Người dùng';
+                const canDelete = comment.UserId === currentUserId;
+
+                const commentHtml = `
+                    <div class="comment-item">
+                        <div class="comment-header">
+                            <div>
+                                <span class="comment-author">
+                                    <i class="fas fa-user-circle"></i> ${username}
+                                </span>
+                                <span class="comment-date ms-3">
+                                    <i class="fas fa-clock"></i> ${date}
+                                </span>
+                            </div>
+                            ${canDelete ? `<button class="comment-delete" onclick="deleteComment('${comment._id}')">
+                                <i class="fas fa-trash"></i> Xóa
+                            </button>` : ''}
+                        </div>
+                        <div class="comment-content">${comment.Content}</div>
+                    </div>
+                `;
+                list.innerHTML += commentHtml;
+            });
+        }
+
+        // Post comment
+        async function postComment() {
+            const content = document.getElementById('commentInput').value.trim();
+            
+            if (!content) {
+                alert('Vui lòng nhập nội dung bình luận!');
+                return;
+            }
+
+            try {
+                const res = await fetch('/comment/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({
+                        MovieId: movieId,
+                        Content: content
+                    })
+                });
+
+                const data = await res.json();
+
+                if (data.status) {
+                    document.getElementById('commentInput').value = '';
+                    loadComments(); // Reload comments
+                } else {
+                    alert('Lỗi: ' + data.message);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Lỗi kết nối!');
+            }
+        }
+
+        // Delete comment
+        async function deleteComment(commentId) {
+            if (!confirm('Bạn có chắc muốn xóa bình luận này?')) return;
+
+            try {
+                const res = await fetch('/comment/delete/' + commentId, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                const data = await res.json();
+
+                if (data.status) {
+                    loadComments(); // Reload comments
+                } else {
+                    alert('Lỗi: ' + data.message);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Lỗi kết nối!');
+            }
+        }
+
         // Init
         loadMovieDetail();
+        loadComments();
     </script>
 
 </body>
