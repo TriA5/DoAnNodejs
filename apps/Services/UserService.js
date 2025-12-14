@@ -151,6 +151,53 @@ class UserService {
          
          return user;
     }
+
+    // ADMIN METHODS 
+    async getListUsers() {
+        this.userRepository = new UserRepository(this.database, null);
+        return await this.userRepository.getAllUsers();
+    }
+
+    async getUserDetail(id) {
+        this.userRepository = new UserRepository(this.database, null);
+        return await this.userRepository.getUserById(id);
+    }
+
+    async updateUserAdmin(id, data) {
+        const session = this.client.startSession();
+        try {
+            session.startTransaction();
+            this.userRepository = new UserRepository(this.database, session);
+            
+            await this.userRepository.updateUser(id, data);
+            
+            await session.commitTransaction();
+            return true;
+        } catch (error) {
+            await session.abortTransaction();
+            throw error;
+        } finally {
+            session.endSession();
+        }
+    }
+
+    async deleteUser(id) {
+        const session = this.client.startSession();
+        try {
+            session.startTransaction();
+            this.userRepository = new UserRepository(this.database, session);
+            
+            await this.userRepository.deleteUser(id);
+            
+            await session.commitTransaction();
+            return true;
+        } catch (error) {
+            await session.abortTransaction();
+            throw error;
+        } finally {
+            session.endSession();
+        }
+    }
 }
 
 module.exports = UserService;

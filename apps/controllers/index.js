@@ -20,6 +20,7 @@ router.use("/comment", AuthMiddleware, require("./CommentController"));
 // --- 4. ROUTER ADMIN ---
 router.use("/admin", AuthMiddleware);
 router.use("/admin/role", require("./admin/RoleController"));
+router.use("/admin/user", require("./admin/UserController"));
 router.use("/admin/category", require("./admin/CategoryController"));
 router.use("/admin/movie", require("./admin/MovieController"));
 router.use("/admin/episode", require("./admin/EpisodeController"));

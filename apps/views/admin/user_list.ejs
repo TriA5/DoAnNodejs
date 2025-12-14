@@ -1,0 +1,77 @@
+<%- include('partials/head') %>
+
+<%- include('partials/sidebar') %>
+
+<div class="flex-grow-1 p-4">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>👤 Danh Sách Người Dùng</h2>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table class="table table-hover table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Quyền (Roles)</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (users && users.length > 0) { %>
+                        <% users.forEach(function(user) { %>
+                            <tr>
+                                <td><%= user.Username %></td>
+                                <td><%= user.Email %></td>
+                                <td>
+                                    <% if (user.RoleObjects && user.RoleObjects.length > 0) { %>
+                                        <%= user.RoleObjects.map(r => r.Name).join(', ') %>
+                                    <% } else { %>
+                                        <span class="text-muted">User</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <a href="/admin/user/edit/<%= user._id %>" class="btn btn-sm btn-warning">Sửa</a>
+                                    <button onclick="deleteUser('<%= user._id %>')" class="btn btn-sm btn-danger">Xóa</button>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="4" class="text-center">Không có người dùng nào.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function deleteUser(id) {
+        if (!confirm("Bạn có chắc chắn muốn xóa người dùng này?")) return;
+        
+        try {
+            const res = await fetch('/admin/user/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: id })
+            });
+            const data = await res.json();
+            if (data.status) {
+                alert("Xóa thành công!");
+                location.reload();
+            } else {
+                alert("Lỗi: " + data.message);
+            }
+        } catch (err) {
+            alert("Lỗi kết nối!");
+        }
+    }
+</script>
+
+<%- include('partials/footer') %>

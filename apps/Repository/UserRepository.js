@@ -36,6 +36,35 @@ class UserRepository {
             .collection("user")
             .updateOne({ _id: objectId }, { $set: data }, { session: this.session });
     }
+
+    async getAllUsers() {
+        return await this.context.collection("user").aggregate([
+            {
+                $addFields: {
+                    roleObjIds: {
+                        $map: {
+                            input: { $ifNull: ["$RoleIds", []] },
+                            as: "rid",
+                            in: { $toObjectId: "$$rid" }
+                        }
+                    }
+                }
+            },
+            {
+                $lookup: {
+                    from: "role",
+                    localField: "roleObjIds",
+                    foreignField: "_id",
+                    as: "RoleObjects"
+                }
+            }
+        ]).toArray();
+    }
+
+    async deleteUser(id) {
+        const objectId = typeof id === 'string' ? new ObjectId(id) : id;
+        return await this.context.collection("user").deleteOne({ _id: objectId }, { session: this.session });
+    }
 }
 
 module.exports = UserRepository;
