@@ -38,6 +38,11 @@ router.get("/movies", AuthMiddleware, function(req, res){
     res.render("movies");
 });
 
+// Trang phim yêu thích
+router.get("/favorites", AuthMiddleware, function(req, res){
+    res.render("favorites");
+});
+
 // Trang chi tiết phim
 router.get("/movie/:id", AuthMiddleware, function(req, res){
     res.render("movie_detail");

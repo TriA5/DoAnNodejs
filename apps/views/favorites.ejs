@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Danh Sách Phim</title>
+    <title>Tủ Phim Yêu Thích</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -53,19 +53,6 @@
         .badge-custom {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
-        .search-box {
-            background: white;
-            border-radius: 50px;
-            padding: 10px 20px;
-            margin: 20px 0;
-        }
-        .category-filter {
-            margin: 20px 0;
-        }
-        .category-filter .btn {
-            margin: 5px;
-            border-radius: 25px;
-        }
     </style>
 </head>
 <body>
@@ -82,10 +69,10 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" href="/movies">Phim</a>
+                        <a class="nav-link" href="/movies">Phim</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/favorites">
+                        <a class="nav-link active" href="/favorites">
                             <i class="fas fa-heart"></i> Tủ Phim
                         </a>
                     </li>
@@ -104,23 +91,8 @@
         
         <!-- Header -->
         <div class="text-center text-white mb-4">
-            <h1 class="display-4 fw-bold">🎬 Khám Phá Phim</h1>
-            <p class="lead">Hàng ngàn bộ phim đang chờ bạn</p>
-        </div>
-
-        <!-- Search & Filter -->
-        <div class="row justify-content-center mb-4">
-            <div class="col-md-8">
-                <div class="search-box">
-                    <input type="text" class="form-control border-0" id="searchInput" 
-                           placeholder="🔍 Tìm kiếm phim..." onkeyup="filterMovies()">
-                </div>
-            </div>
-        </div>
-
-        <!-- Category Filter -->
-        <div class="category-filter text-center" id="categoryFilter">
-            <button class="btn btn-light active" onclick="filterByCategory('')">Tất cả</button>
+            <h1 class="display-4 fw-bold">❤️ Phim Yêu Thích</h1>
+            <p class="lead">Danh sách những bộ phim bạn đã lưu</p>
         </div>
 
         <!-- Loading -->
@@ -137,18 +109,15 @@
 
         <!-- Empty State -->
         <div id="emptyState" class="text-center text-white" style="display: none;">
-            <i class="fas fa-film fa-5x mb-3 opacity-50"></i>
-            <h3>Không tìm thấy phim nào</h3>
+            <i class="far fa-heart fa-5x mb-3 opacity-50"></i>
+            <h3>Bạn chưa có phim yêu thích nào</h3>
+            <a href="/movies" class="btn btn-light mt-3">Khám phá ngay</a>
         </div>
 
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let allMovies = [];
-        let allCategories = [];
-        let currentCategory = '';
-
         // Check login
         const token = localStorage.getItem('user_token');
         if (!token) {
@@ -156,29 +125,16 @@
             window.location.href = "/login-page";
         }
 
-        // Load movies
-        async function loadMovies() {
+        // Load favorite movies
+        async function loadFavorites() {
             try {
-                const res = await fetch('/movie/list', {
+                const res = await fetch('/movie/favorites', {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
                 const data = await res.json();
 
-                if (data.status) {
-                    allMovies = data.data;
-                    
-                    // Extract unique categories
-                    const categoryMap = {};
-                    allMovies.forEach(movie => {
-                        if (movie.CategoryInfo && movie.CategoryInfo[0]) {
-                            const cat = movie.CategoryInfo[0];
-                            categoryMap[cat._id] = cat.Name;
-                        }
-                    });
-                    allCategories = Object.entries(categoryMap).map(([id, name]) => ({ id, name }));
-                    
-                    renderCategories();
-                    renderMovies(allMovies);
+                if (data.status && data.data.length > 0) {
+                    renderMovies(data.data);
                 } else {
                     showEmpty();
                 }
@@ -188,16 +144,6 @@
             }
         }
 
-        // Render categories
-        function renderCategories() {
-            const filter = document.getElementById('categoryFilter');
-            allCategories.forEach(cat => {
-                filter.innerHTML += `
-                    <button class="btn btn-light" onclick="filterByCategory('${cat.id}')">${cat.name}</button>
-                `;
-            });
-        }
-
         // Render movies
         function renderMovies(movies) {
             const grid = document.getElementById('moviesGrid');
@@ -205,13 +151,6 @@
             const empty = document.getElementById('emptyState');
 
             loading.style.display = 'none';
-            
-            if (movies.length === 0) {
-                grid.style.display = 'none';
-                empty.style.display = 'block';
-                return;
-            }
-
             grid.style.display = 'flex';
             empty.style.display = 'none';
             grid.innerHTML = '';
@@ -219,6 +158,7 @@
             movies.forEach(movie => {
                 const categoryName = movie.CategoryInfo?.[0]?.Name || 'Chưa phân loại';
                 const thumb = movie.Thumb || '/static/images/default-movie.jpg';
+                const bookmarkedDate = new Date(movie.BookmarkedTime).toLocaleDateString('vi-VN');
                 
                 grid.innerHTML += `
                     <div class="col-md-3 col-sm-6">
@@ -230,43 +170,14 @@
                                     <span class="badge badge-custom">${categoryName}</span>
                                     <span class="badge bg-secondary">${movie.Year || 'N/A'}</span>
                                 </div>
-                                <div class="movie-meta mt-2">
-                                    <i class="fas fa-eye"></i> ${movie.View || 0} lượt xem
+                                <div class="movie-meta mt-2 text-muted" style="font-size: 0.8rem;">
+                                    <i class="fas fa-clock"></i> Đã lưu: ${bookmarkedDate}
                                 </div>
                             </div>
                         </div>
                     </div>
                 `;
             });
-        }
-
-        // Filter by category
-        function filterByCategory(categoryId) {
-            currentCategory = categoryId;
-            
-            // Update active button
-            document.querySelectorAll('.category-filter .btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-
-            // Filter movies
-            filterMovies();
-        }
-
-        // Filter movies by search and category
-        function filterMovies() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            
-            let filtered = allMovies.filter(movie => {
-                const matchSearch = movie.Name.toLowerCase().includes(searchTerm) || 
-                                   (movie.OriginName && movie.OriginName.toLowerCase().includes(searchTerm));
-                const matchCategory = !currentCategory || 
-                                     (movie.CategoryInfo && movie.CategoryInfo[0] && movie.CategoryInfo[0]._id === currentCategory);
-                return matchSearch && matchCategory;
-            });
-
-            renderMovies(filtered);
         }
 
         // View movie detail
@@ -289,7 +200,7 @@
         }
 
         // Init
-        loadMovies();
+        loadFavorites();
     </script>
 
 </body>

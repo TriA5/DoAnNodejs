@@ -189,6 +189,11 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
+                        <a class="nav-link" href="/favorites">
+                            <i class="fas fa-heart"></i> Tủ Phim
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="#" onclick="logout()">
                             <i class="fas fa-sign-out-alt"></i> Đăng xuất
                         </a>
@@ -225,6 +230,22 @@
                         <div class="movie-meta">
                             <i class="fas fa-eye"></i> <span id="movieViews"></span> lượt xem
                             <span class="ms-3"><i class="fas fa-clock"></i> <span id="movieTime"></span></span>
+                            <button class="btn btn-outline-light btn-sm ms-3" id="btnBookmark" onclick="toggleBookmark()">
+                                <i class="far fa-heart"></i> Yêu thích
+                            </button>
+                        </div>
+                        <div class="movie-meta mt-2">
+                            <div class="d-flex align-items-center">
+                                <div class="stars me-2" id="ratingStars" style="cursor: pointer;">
+                                    <i class="far fa-star text-warning" data-value="1"></i>
+                                    <i class="far fa-star text-warning" data-value="2"></i>
+                                    <i class="far fa-star text-warning" data-value="3"></i>
+                                    <i class="far fa-star text-warning" data-value="4"></i>
+                                    <i class="far fa-star text-warning" data-value="5"></i>
+                                </div>
+                                <span id="ratingText" class="text-warning fw-bold">0/5</span>
+                                <span class="text-muted ms-2" id="ratingCount">(0 đánh giá)</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -278,7 +299,8 @@
         }
 
         // Get movie ID from URL
-        const movieId = window.location.pathname.split('/').pop();
+        const pathParts = window.location.pathname.split('/');
+        const movieId = pathParts.pop() || pathParts.pop(); // Handle potential trailing slash
 
         // Load movie detail
         async function loadMovieDetail() {
@@ -286,6 +308,13 @@
                 const res = await fetch('/movie/detail/' + movieId, {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
+                
+                if (!res.ok) {
+                    console.error("Failed to load movie detail:", res.status, res.statusText);
+                    alert('Lỗi tải dữ liệu phim (404)');
+                    return;
+                }
+
                 const data = await res.json();
 
                 if (data.status) {
@@ -302,6 +331,14 @@
                     document.getElementById('movieViews').textContent = movie.View || 0;
                     document.getElementById('movieTime').textContent = movie.Time || 'Đang cập nhật';
                     document.getElementById('movieContent').textContent = movie.Content || 'Chưa có mô tả';
+
+                    // Rating
+                    if (data.data.rating) {
+                        updateRatingUI(data.data.rating.average, data.data.rating.count, data.data.userRating);
+                    }
+
+                    // Bookmark
+                    updateBookmarkUI(data.data.isBookmarked);
 
                     // Render episodes
                     renderEpisodes(episodes);
@@ -373,6 +410,87 @@
             }
         }
 
+        // === RATING FUNCTIONS ===
+        function updateRatingUI(average, count, userRating) {
+            document.getElementById('ratingText').textContent = average ? average.toFixed(1) + '/5' : '0/5';
+            document.getElementById('ratingCount').textContent = `(${count} đánh giá)`;
+            
+            const stars = document.querySelectorAll('#ratingStars i');
+            
+            // Display average if user hasn't rated, or user's rating if they have
+            const valueToShow = userRating || average || 0;
+
+            stars.forEach(star => {
+                const val = parseInt(star.getAttribute('data-value'));
+                star.className = val <= valueToShow ? 'fas fa-star text-warning' : 'far fa-star text-warning';
+                
+                // Add click event
+                star.onclick = () => rateMovie(val);
+            });
+        }
+
+        async function rateMovie(value) {
+            try {
+                const res = await fetch('/movie/rate', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token 
+                    },
+                    body: JSON.stringify({ movieId: movieId, value: value })
+                });
+                const data = await res.json();
+                
+                if (data.status) {
+                    // Update UI with new average and user's rating (which is 'value')
+                    updateRatingUI(data.data.average, data.data.count, value);
+                    alert('Cảm ơn bạn đã đánh giá!');
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Lỗi khi đánh giá');
+            }
+        }
+
+        // === BOOKMARK FUNCTIONS ===
+        function updateBookmarkUI(isBookmarked) {
+            const btn = document.getElementById('btnBookmark');
+            if (isBookmarked) {
+                btn.innerHTML = '<i class="fas fa-heart text-danger"></i> Đã yêu thích';
+                btn.classList.remove('btn-outline-light');
+                btn.classList.add('btn-light');
+            } else {
+                btn.innerHTML = '<i class="far fa-heart"></i> Yêu thích';
+                btn.classList.remove('btn-light');
+                btn.classList.add('btn-outline-light');
+            }
+        }
+
+        async function toggleBookmark() {
+            try {
+                const res = await fetch('/movie/bookmark', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token 
+                    },
+                    body: JSON.stringify({ movieId: movieId })
+                });
+                const data = await res.json();
+                
+                if (data.status) {
+                    updateBookmarkUI(data.isBookmarked);
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Lỗi kết nối');
+            }
+        }
+
         // Logout
         function logout() {
             localStorage.removeItem('user_token');
@@ -389,6 +507,13 @@
                 const res = await fetch('/comment/movie/' + movieId, {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
+                
+                if (!res.ok) {
+                    console.error("Failed to load comments:", res.status, res.statusText);
+                    document.getElementById('commentsList').innerHTML = '<div class="text-danger">Lỗi tải bình luận</div>';
+                    return;
+                }
+
                 const data = await res.json();
 
                 if (data.status) {
