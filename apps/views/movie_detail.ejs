@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,9 +13,11 @@
             color: white;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
+
         .navbar {
-            background: rgba(0,0,0,0.9) !important;
+            background: rgba(0, 0, 0, 0.9) !important;
         }
+
         .movie-header {
             position: relative;
             height: 500px;
@@ -23,6 +26,7 @@
             border-radius: 15px;
             overflow: hidden;
         }
+
         .movie-overlay {
             position: absolute;
             top: 0;
@@ -34,34 +38,41 @@
             align-items: flex-end;
             padding: 40px;
         }
+
         .movie-poster {
             width: 200px;
             height: 300px;
             object-fit: cover;
             border-radius: 10px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
         }
+
         .movie-details {
             margin-left: 30px;
         }
+
         .movie-title {
             font-size: 3rem;
             font-weight: bold;
-            text-shadow: 2px 2px 10px rgba(0,0,0,0.8);
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.8);
         }
+
         .movie-meta {
             font-size: 1.1rem;
             margin: 10px 0;
         }
+
         .badge-custom {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 8px 15px;
             font-size: 1rem;
             margin-right: 10px;
         }
+
         .episodes-section {
             margin-top: 40px;
         }
+
         .episode-card {
             background: #1a1a1a;
             border-radius: 10px;
@@ -71,16 +82,19 @@
             transition: all 0.3s;
             border: 2px solid transparent;
         }
+
         .episode-card:hover {
             background: #2a2a2a;
             border-color: #667eea;
             transform: translateX(10px);
         }
+
         .episode-number {
             font-size: 1.5rem;
             font-weight: bold;
             color: #667eea;
         }
+
         .play-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
@@ -89,16 +103,18 @@
             border-radius: 50px;
             transition: transform 0.3s;
         }
+
         .play-btn:hover {
             transform: scale(1.05);
         }
+
         .content-section {
             background: #1a1a1a;
             border-radius: 15px;
             padding: 30px;
             margin-top: 30px;
         }
-        
+
         /* Comment Section */
         .comment-section {
             background: #1a1a1a;
@@ -106,14 +122,14 @@
             padding: 30px;
             margin-top: 30px;
         }
-        
+
         .comment-form {
             background: #2a2a2a;
             padding: 20px;
             border-radius: 10px;
             margin-bottom: 30px;
         }
-        
+
         .comment-form textarea {
             width: 100%;
             background: #1a1a1a;
@@ -124,12 +140,12 @@
             resize: vertical;
             min-height: 100px;
         }
-        
+
         .comment-form textarea:focus {
             outline: none;
             border-color: #667eea;
         }
-        
+
         .comment-item {
             background: #2a2a2a;
             padding: 20px;
@@ -137,29 +153,29 @@
             margin-bottom: 15px;
             border-left: 3px solid #667eea;
         }
-        
+
         .comment-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 10px;
         }
-        
+
         .comment-author {
             font-weight: 600;
             color: #667eea;
         }
-        
+
         .comment-date {
             color: #666;
             font-size: 0.9rem;
         }
-        
+
         .comment-content {
             color: #ddd;
             line-height: 1.6;
         }
-        
+
         .comment-delete {
             background: #dc3545;
             border: none;
@@ -169,12 +185,13 @@
             cursor: pointer;
             font-size: 0.9rem;
         }
-        
+
         .comment-delete:hover {
             background: #c82333;
         }
     </style>
 </head>
+
 <body>
 
     <!-- Navbar -->
@@ -205,7 +222,7 @@
 
     <!-- Main Content -->
     <div class="container py-4">
-        
+
         <!-- Loading -->
         <div id="loading" class="text-center">
             <div class="spinner-border text-primary" role="status">
@@ -215,7 +232,7 @@
 
         <!-- Movie Detail -->
         <div id="movieDetail" style="display: none;">
-            
+
             <!-- Movie Header with Background -->
             <div class="movie-header" id="movieHeader">
                 <div class="movie-overlay">
@@ -230,7 +247,8 @@
                         <div class="movie-meta">
                             <i class="fas fa-eye"></i> <span id="movieViews"></span> lượt xem
                             <span class="ms-3"><i class="fas fa-clock"></i> <span id="movieTime"></span></span>
-                            <button class="btn btn-outline-light btn-sm ms-3" id="btnBookmark" onclick="toggleBookmark()">
+                            <button class="btn btn-outline-light btn-sm ms-3" id="btnBookmark"
+                                onclick="toggleBookmark()">
                                 <i class="far fa-heart"></i> Yêu thích
                             </button>
                         </div>
@@ -268,7 +286,7 @@
             <!-- Comments Section -->
             <div class="comment-section">
                 <h3 class="mb-4"><i class="fas fa-comments"></i> Bình Luận (<span id="commentCount">0</span>)</h3>
-                
+
                 <!-- Comment Form -->
                 <div class="comment-form">
                     <h5 class="mb-3">Viết bình luận của bạn</h5>
@@ -308,7 +326,7 @@
                 const res = await fetch('/movie/detail/' + movieId, {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
-                
+
                 if (!res.ok) {
                     console.error("Failed to load movie detail:", res.status, res.statusText);
                     alert('Lỗi tải dữ liệu phim (404)');
@@ -362,7 +380,7 @@
         // Render episodes
         function renderEpisodes(episodes) {
             const list = document.getElementById('episodesList');
-            
+
             if (episodes.length === 0) {
                 list.innerHTML = `
                     <div class="alert alert-warning">
@@ -374,7 +392,7 @@
 
             episodes.forEach((ep, index) => {
                 const card = `
-                    <div class="episode-card" onclick="watchEpisode('${ep.Path}', '${ep.Name}')">
+                    <div class="episode-card" onclick="watchEpisode('${ep.Path}', '${ep.Name}', '${ep.Episode}')">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <span class="episode-number">${index + 1}</span>
@@ -391,10 +409,12 @@
         }
 
         // Watch episode
-        function watchEpisode(path, name) {
+        function watchEpisode(path, name, episode) {
             // Save to localStorage for player page
             localStorage.setItem('current_video_path', path);
             localStorage.setItem('current_video_name', name);
+            localStorage.setItem('current_movie_id', movieId);
+            localStorage.setItem('current_episode', episode);
             window.location.href = '/player';
         }
 
@@ -414,16 +434,16 @@
         function updateRatingUI(average, count, userRating) {
             document.getElementById('ratingText').textContent = average ? average.toFixed(1) + '/5' : '0/5';
             document.getElementById('ratingCount').textContent = `(${count} đánh giá)`;
-            
+
             const stars = document.querySelectorAll('#ratingStars i');
-            
+
             // Display average if user hasn't rated, or user's rating if they have
             const valueToShow = userRating || average || 0;
 
             stars.forEach(star => {
                 const val = parseInt(star.getAttribute('data-value'));
                 star.className = val <= valueToShow ? 'fas fa-star text-warning' : 'far fa-star text-warning';
-                
+
                 // Add click event
                 star.onclick = () => rateMovie(val);
             });
@@ -433,14 +453,14 @@
             try {
                 const res = await fetch('/movie/rate', {
                     method: 'POST',
-                    headers: { 
+                    headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token 
+                        'Authorization': 'Bearer ' + token
                     },
                     body: JSON.stringify({ movieId: movieId, value: value })
                 });
                 const data = await res.json();
-                
+
                 if (data.status) {
                     // Update UI with new average and user's rating (which is 'value')
                     updateRatingUI(data.data.average, data.data.count, value);
@@ -472,14 +492,14 @@
             try {
                 const res = await fetch('/movie/bookmark', {
                     method: 'POST',
-                    headers: { 
+                    headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token 
+                        'Authorization': 'Bearer ' + token
                     },
                     body: JSON.stringify({ movieId: movieId })
                 });
                 const data = await res.json();
-                
+
                 if (data.status) {
                     updateBookmarkUI(data.isBookmarked);
                 } else {
@@ -507,7 +527,7 @@
                 const res = await fetch('/comment/movie/' + movieId, {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
-                
+
                 if (!res.ok) {
                     console.error("Failed to load comments:", res.status, res.statusText);
                     document.getElementById('commentsList').innerHTML = '<div class="text-danger">Lỗi tải bình luận</div>';
@@ -522,7 +542,7 @@
                 }
             } catch (err) {
                 console.error(err);
-                document.getElementById('commentsList').innerHTML = 
+                document.getElementById('commentsList').innerHTML =
                     '<div class="text-danger">Lỗi tải bình luận</div>';
             }
         }
@@ -530,7 +550,7 @@
         // Render comments
         function renderComments(comments) {
             const list = document.getElementById('commentsList');
-            
+
             if (comments.length === 0) {
                 list.innerHTML = '<div class="text-muted text-center">Chưa có bình luận nào. Hãy là người đầu tiên!</div>';
                 return;
@@ -572,7 +592,7 @@
         // Post comment
         async function postComment() {
             const content = document.getElementById('commentInput').value.trim();
-            
+
             if (!content) {
                 alert('Vui lòng nhập nội dung bình luận!');
                 return;
@@ -634,4 +654,5 @@
     </script>
 
 </body>
+
 </html>

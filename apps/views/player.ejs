@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,45 +9,52 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { 
-            background: #0f0f0f; 
-            color: #fff; 
+        body {
+            background: #0f0f0f;
+            color: #fff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
         }
+
         .navbar {
-            background: rgba(0,0,0,0.9) !important;
+            background: rgba(0, 0, 0, 0.9) !important;
         }
+
         .video-container {
             max-width: 1200px;
             margin: 20px auto;
             background: #000;
             border-radius: 15px;
             overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
         }
-        video { 
+
+        video {
             width: 100%;
             display: block;
             background: #000;
         }
+
         .video-info {
             background: #1a1a1a;
             padding: 20px;
             border-radius: 0 0 15px 15px;
         }
+
         .video-title {
             font-size: 1.8rem;
             font-weight: bold;
             margin-bottom: 10px;
         }
+
         .controls-bar {
             display: flex;
             gap: 10px;
             margin-top: 15px;
             flex-wrap: wrap;
         }
+
         .btn-custom {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
@@ -56,10 +64,12 @@
             font-weight: bold;
             transition: transform 0.3s;
         }
+
         .btn-custom:hover {
             transform: scale(1.05);
             color: white;
         }
+
         .quality-badge {
             background: #28a745;
             padding: 5px 15px;
@@ -67,13 +77,14 @@
             font-size: 0.9rem;
             display: inline-block;
         }
+
         .loading-overlay {
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0, 0, 0, 0.8);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -81,6 +92,7 @@
         }
     </style>
 </head>
+
 <body>
 
     <!-- Navbar -->
@@ -109,7 +121,7 @@
                     <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
                 </div>
             </div>
-            
+
             <div class="video-info">
                 <div class="video-title" id="videoTitle">
                     <i class="fas fa-film"></i> Đang tải...
@@ -125,7 +137,7 @@
                         <i class="fas fa-circle"></i> Sẵn sàng
                     </span>
                 </div>
-                
+
                 <div class="controls-bar">
                     <button class="btn btn-custom" onclick="toggleFullscreen()">
                         <i class="fas fa-expand"></i> Toàn màn hình
@@ -159,10 +171,12 @@
 
         var video = document.getElementById('video');
         var loadingOverlay = document.getElementById('loadingOverlay');
-        
+
         // 3. Lấy đường dẫn video từ localStorage (được set từ trang movie_detail)
         var videoPath = localStorage.getItem('current_video_path');
         var videoName = localStorage.getItem('current_video_name');
+        var currentMovieId = localStorage.getItem('current_movie_id');
+        var currentEpisode = localStorage.getItem('current_episode');
 
         if (!videoPath) {
             alert("Không tìm thấy video! Vui lòng chọn tập phim.");
@@ -171,12 +185,16 @@
 
         // Update title
         document.getElementById('videoTitle').textContent = videoName || 'Đang xem phim';
-        
+
         // Tạo full URL
         var baseUrl = window.location.origin + videoPath;
         var videoSrc = baseUrl + "?token=" + token;
 
         console.log("🎬 Đang load video:", videoPath);
+
+        //RESUME PLAYBACK: Biến theo dõi tiến trình
+        var progressSaveInterval = null;
+        var hasLoadedProgress = false;
 
         // Show loading
         loadingOverlay.style.display = 'flex';
@@ -184,29 +202,33 @@
 
         if (Hls.isSupported()) {
             var hls = new Hls({
-                xhrSetup: function(xhr, url) {
+                xhrSetup: function (xhr, url) {
                     if (url.indexOf("token=") === -1) {
                         var newUrl = url + (url.indexOf("?") === -1 ? "?" : "&") + "token=" + token;
                         xhr.open("GET", newUrl, true);
                     }
                 }
             });
-            
+
             hls.loadSource(videoSrc);
             hls.attachMedia(video);
-            
-            hls.on(Hls.Events.MANIFEST_PARSED, function() {
+
+            hls.on(Hls.Events.MANIFEST_PARSED, function () {
                 loadingOverlay.style.display = 'none';
                 document.getElementById('statusText').innerHTML = '<i class="fas fa-check-circle"></i> Đang phát';
-                video.play().catch(e => {
-                    console.log("Cần tương tác để phát");
-                    document.getElementById('statusText').innerHTML = '<i class="fas fa-hand-pointer"></i> Click để phát';
+
+                //RESUME PLAYBACK: Load tiến trình đã xem
+                loadSavedProgress().then(() => {
+                    video.play().catch(e => {
+                        console.log("Cần tương tác để phát");
+                        document.getElementById('statusText').innerHTML = '<i class="fas fa-hand-pointer"></i> Click để phát';
+                    });
                 });
             });
-            
+
             hls.on(Hls.Events.ERROR, function (event, data) {
                 console.error("HLS Error:", data);
-                if(data.response && data.response.code === 403) {
+                if (data.response && data.response.code === 403) {
                     alert("Phiên đăng nhập hết hạn! Vui lòng đăng nhập lại.");
                     logout();
                 } else if (data.fatal) {
@@ -217,25 +239,126 @@
             });
 
             // Update status when playing
-            video.addEventListener('playing', function() {
+            video.addEventListener('playing', function () {
                 document.getElementById('statusText').innerHTML = '<i class="fas fa-play-circle"></i> Đang phát';
             });
 
-            video.addEventListener('pause', function() {
+            video.addEventListener('pause', function () {
                 document.getElementById('statusText').innerHTML = '<i class="fas fa-pause-circle"></i> Tạm dừng';
             });
 
-            video.addEventListener('waiting', function() {
+            video.addEventListener('waiting', function () {
                 document.getElementById('statusText').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tải...';
             });
         }
         else if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = videoSrc;
-            video.addEventListener('loadedmetadata', function() {
+            video.addEventListener('loadedmetadata', function () {
                 loadingOverlay.style.display = 'none';
                 document.getElementById('statusText').innerHTML = '<i class="fas fa-check-circle"></i> Đang phát';
-                video.play();
+
+                //PLAYBACK: Load tiến trình đã xem
+                loadSavedProgress().then(() => {
+                    video.play();
+                });
             });
+        }
+
+        //RESUME PLAYBACK: Hàm load tiến trình đã lưu
+        async function loadSavedProgress() {
+            if (!currentMovieId || !currentEpisode || hasLoadedProgress) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/movie/get-progress/${currentMovieId}/${currentEpisode}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.status && result.data && result.data.currentTime > 5) {
+                    // Chỉ resume nếu đã xem > 5 giây
+                    video.currentTime = result.data.currentTime;
+
+                    // Hiển thị thông báo
+                    const resumeTime = formatTime(result.data.currentTime);
+                    document.getElementById('statusText').innerHTML =
+                        `<i class="fas fa-history"></i> Tiếp tục từ ${resumeTime}`;
+                }
+
+                hasLoadedProgress = true;
+
+                // Bắt đầu auto-save progress
+                startProgressTracking();
+            } catch (error) {
+                console.error("Lỗi load tiến trình:", error);
+                startProgressTracking();
+            }
+        }
+
+        //RESUME PLAYBACK: Tự động lưu tiến trình mỗi 10 giây
+        function startProgressTracking() {
+            if (progressSaveInterval) {
+                clearInterval(progressSaveInterval);
+            }
+
+            progressSaveInterval = setInterval(() => {
+                saveProgress();
+            }, 10000); // Lưu mỗi 10 giây
+
+            // Lưu khi pause hoặc thoát
+            video.addEventListener('pause', saveProgress);
+            window.addEventListener('beforeunload', saveProgress);
+        }
+
+        //RESUME PLAYBACK: Lưu tiến trình hiện tại
+        async function saveProgress() {
+            if (!currentMovieId || !currentEpisode) {
+                return;
+            }
+
+            const currentTime = video.currentTime;
+            const duration = video.duration;
+
+            // Không lưu nếu chưa xem hoặc video chưa có duration
+            if (currentTime < 1 || !duration || duration < 1) {
+                return;
+            }
+
+            try {
+                await fetch('/movie/update-progress', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({
+                        movieId: currentMovieId,
+                        episode: currentEpisode,
+                        currentTime: currentTime,
+                        duration: duration
+                    })
+                });
+
+                console.log("💾 Đã lưu tiến trình:", formatTime(currentTime));
+            } catch (error) {
+                console.error("Lỗi lưu tiến trình:", error);
+            }
+        }
+
+        // === Format time helper ===
+        function formatTime(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+
+            if (h > 0) {
+                return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }
+            return `${m}:${s.toString().padStart(2, '0')}`;
         }
 
         // Toggle fullscreen
@@ -265,8 +388,8 @@
         }
 
         // Keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            switch(e.key) {
+        document.addEventListener('keydown', function (e) {
+            switch (e.key) {
                 case ' ':
                     e.preventDefault();
                     video.paused ? video.play() : video.pause();
@@ -285,4 +408,5 @@
     </script>
 
 </body>
+
 </html>
