@@ -3,35 +3,51 @@ var router = express.Router();
 var UserService = require(global.__basedir + "/apps/Services/UserService");
 var RoleService = require(global.__basedir + "/apps/Services/RoleService");
 
-// List Users
+// Render User List Page (View)
 router.get("/", async function(req, res) {
+    res.render("admin/user_list", { page: 'users' });
+});
+
+// Render Edit User Page (View)
+router.get("/edit/:id", async function(req, res) {
+    res.render("admin/user_edit", { userId: req.params.id, page: 'users' });
+});
+
+// API: Get List Users
+router.get("/api/list", async function(req, res) {
     try {
         var service = await new UserService().init();
         var users = await service.getListUsers();
-        res.render("admin/user_list", { users: users, page: 'users' });
+        res.json({ status: true, data: users });
     } catch (error) {
-        res.render("admin/user_list", { users: [], error: error.message, page: 'users' });
+        res.json({ status: false, message: error.message });
     }
 });
 
-// Edit User Page
-router.get("/edit/:id", async function(req, res) {
+// API: Get User Detail
+router.get("/api/detail/:id", async function(req, res) {
     try {
         var userService = await new UserService().init();
-        var roleService = await new RoleService().init();
-        
         var user = await userService.getUserDetail(req.params.id);
-        var roles = await roleService.getRoleList();
-        
-        res.render("admin/user_edit", { user: user, roles: roles, page: 'users' });
+        res.json({ status: true, data: user });
     } catch (error) {
-        console.log(error);
-        res.redirect("/admin/user");
+        res.json({ status: false, message: error.message });
     }
 });
 
-// Update User
-router.post("/update", async function(req, res) {
+// API: Get All Roles
+router.get("/api/roles", async function(req, res) {
+    try {
+        var roleService = await new RoleService().init();
+        var roles = await roleService.getRoleList();
+        res.json({ status: true, data: roles });
+    } catch (error) {
+        res.json({ status: false, message: error.message });
+    }
+});
+
+// API: Update User
+router.post("/api/update", async function(req, res) {
     try {
         var service = await new UserService().init();
         var id = req.body.id;
@@ -49,19 +65,18 @@ router.post("/update", async function(req, res) {
         }
 
         await service.updateUserAdmin(id, data);
-        res.redirect("/admin/user");
+        res.json({ status: true, message: "Cập nhật thành công!" });
     } catch (error) {
-        console.log(error);
-        res.redirect("/admin/user/edit/" + req.body.id);
+        res.json({ status: false, message: error.message });
     }
 });
 
-// Delete User
-router.post("/delete", async function(req, res) {
+// API: Delete User
+router.post("/api/delete", async function(req, res) {
     try {
         var service = await new UserService().init();
         await service.deleteUser(req.body.id);
-        res.json({ status: true });
+        res.json({ status: true, message: "Xóa thành công!" });
     } catch (error) {
         res.json({ status: false, message: error.message });
     }

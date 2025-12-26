@@ -10,7 +10,12 @@
 
     <div class="card shadow-sm">
         <div class="card-body">
-            <table class="table table-hover table-bordered">
+            <div id="loading" class="text-center py-5">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+            <table class="table table-hover table-bordered" id="userTable" style="display: none;">
                 <thead class="table-dark">
                     <tr>
                         <th>Username</th>
@@ -19,30 +24,7 @@
                         <th>Hành động</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <% if (users && users.length > 0) { %>
-                        <% users.forEach(function(user) { %>
-                            <tr>
-                                <td><%= user.Username %></td>
-                                <td><%= user.Email %></td>
-                                <td>
-                                    <% if (user.RoleObjects && user.RoleObjects.length > 0) { %>
-                                        <%= user.RoleObjects.map(r => r.Name).join(', ') %>
-                                    <% } else { %>
-                                        <span class="text-muted">User</span>
-                                    <% } %>
-                                </td>
-                                <td>
-                                    <a href="/admin/user/edit/<%= user._id %>" class="btn btn-sm btn-warning">Sửa</a>
-                                    <button onclick="deleteUser('<%= user._id %>')" class="btn btn-sm btn-danger">Xóa</button>
-                                </td>
-                            </tr>
-                        <% }); %>
-                    <% } else { %>
-                        <tr>
-                            <td colspan="4" class="text-center">Không có người dùng nào.</td>
-                        </tr>
-                    <% } %>
+                <tbody id="userTableBody">
                 </tbody>
             </table>
         </div>
@@ -50,11 +32,58 @@
 </div>
 
 <script>
+    // Load users when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        loadUsers();
+    });
+
+    async function loadUsers() {
+        try {
+            const res = await fetch('/admin/user/api/list');
+            const data = await res.json();
+            
+            const loading = document.getElementById('loading');
+            const table = document.getElementById('userTable');
+            const tbody = document.getElementById('userTableBody');
+            
+            if (data.status && data.data && data.data.length > 0) {
+                tbody.innerHTML = '';
+                data.data.forEach(function(user) {
+                    const roles = user.RoleObjects && user.RoleObjects.length > 0 
+                        ? user.RoleObjects.map(r => r.Name).join(', ')
+                        : '<span class="text-muted">User</span>';
+                    
+                    const row = `
+                        <tr>
+                            <td>${user.Username}</td>
+                            <td>${user.Email}</td>
+                            <td>${roles}</td>
+                            <td>
+                                <a href="/admin/user/edit/${user._id}" class="btn btn-sm btn-warning">Sửa</a>
+                                <button onclick="deleteUser('${user._id}')" class="btn btn-sm btn-danger">Xóa</button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+                loading.style.display = 'none';
+                table.style.display = 'table';
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">Không có người dùng nào.</td></tr>';
+                loading.style.display = 'none';
+                table.style.display = 'table';
+            }
+        } catch (err) {
+            console.error(err);
+            document.getElementById('loading').innerHTML = '<div class="alert alert-danger">Lỗi kết nối!</div>';
+        }
+    }
+
     async function deleteUser(id) {
         if (!confirm("Bạn có chắc chắn muốn xóa người dùng này?")) return;
         
         try {
-            const res = await fetch('/admin/user/delete', {
+            const res = await fetch('/admin/user/api/delete', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -63,8 +92,8 @@
             });
             const data = await res.json();
             if (data.status) {
-                alert("Xóa thành công!");
-                location.reload();
+                alert(data.message || "Xóa thành công!");
+                loadUsers(); // Reload the list
             } else {
                 alert("Lỗi: " + data.message);
             }

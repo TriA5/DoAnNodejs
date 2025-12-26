@@ -5,37 +5,31 @@
 <div class="flex-grow-1 p-4">
     <h2>✏️ Chỉnh Sửa Người Dùng</h2>
     
-    <div class="card shadow-sm mt-4">
+    <div id="loading" class="text-center py-5">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm mt-4" id="editForm" style="display: none;">
         <div class="card-body">
-            <form action="/admin/user/update" method="POST">
-                <input type="hidden" name="id" value="<%= user._id %>">
+            <form id="userForm">
+                <input type="hidden" id="userId" name="id" value="<%= userId %>">
                 
                 <div class="mb-3">
                     <label class="form-label">Username</label>
-                    <input type="text" class="form-control" name="Username" value="<%= user.Username %>" required>
+                    <input type="text" class="form-control" id="username" name="Username" required>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Email</label>
-                    <input type="email" class="form-control" name="Email" value="<%= user.Email %>" required>
+                    <input type="email" class="form-control" id="email" name="Email" required>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Roles</label>
-                    <div class="border p-3 rounded">
-                        <% if (roles && roles.length > 0) { %>
-                            <% roles.forEach(function(role) { %>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="RoleIds" value="<%= role._id %>" id="role_<%= role._id %>"
-                                        <%= user.RoleIds && user.RoleIds.includes(role._id.toString()) ? 'checked' : '' %> >
-                                    <label class="form-check-label" for="role_<%= role._id %>">
-                                        <%= role.Name %>
-                                    </label>
-                                </div>
-                            <% }); %>
-                        <% } else { %>
-                            <p>Không có role nào trong hệ thống.</p>
-                        <% } %>
+                    <div class="border p-3 rounded" id="rolesContainer">
+                        <p class="text-muted">Đang tải roles...</p>
                     </div>
                 </div>
 
@@ -45,5 +39,106 @@
         </div>
     </div>
 </div>
+
+<script>
+    const userId = '<%= userId %>';
+    let userData = null;
+    let rolesData = null;
+
+    // Load data when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        loadData();
+    });
+
+    async function loadData() {
+        try {
+            // Fetch user detail and roles in parallel
+            const [userRes, rolesRes] = await Promise.all([
+                fetch(`/admin/user/api/detail/${userId}`),
+                fetch('/admin/user/api/roles')
+            ]);
+
+            const userResult = await userRes.json();
+            const rolesResult = await rolesRes.json();
+
+            if (userResult.status && rolesResult.status) {
+                userData = userResult.data;
+                rolesData = rolesResult.data;
+
+                // Populate form
+                document.getElementById('username').value = userData.Username;
+                document.getElementById('email').value = userData.Email;
+
+                // Populate roles
+                const rolesContainer = document.getElementById('rolesContainer');
+                if (rolesData && rolesData.length > 0) {
+                    rolesContainer.innerHTML = '';
+                    rolesData.forEach(function(role) {
+                        const isChecked = userData.RoleIds && userData.RoleIds.includes(role._id.toString());
+                        const roleDiv = `
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="RoleIds" value="${role._id}" id="role_${role._id}" ${isChecked ? 'checked' : ''}>
+                                <label class="form-check-label" for="role_${role._id}">
+                                    ${role.Name}
+                                </label>
+                            </div>
+                        `;
+                        rolesContainer.innerHTML += roleDiv;
+                    });
+                } else {
+                    rolesContainer.innerHTML = '<p>Không có role nào trong hệ thống.</p>';
+                }
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('editForm').style.display = 'block';
+            } else {
+                throw new Error(userResult.message || rolesResult.message || 'Lỗi tải dữ liệu');
+            }
+        } catch (err) {
+            console.error(err);
+            document.getElementById('loading').innerHTML = '<div class="alert alert-danger">Lỗi: ' + err.message + '</div>';
+        }
+    }
+
+    // Handle form submission
+    document.getElementById('userForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        // Collect form data
+        const formData = {
+            id: document.getElementById('userId').value,
+            Username: document.getElementById('username').value,
+            Email: document.getElementById('email').value,
+            RoleIds: []
+        };
+
+        // Get checked roles
+        const checkedRoles = document.querySelectorAll('input[name="RoleIds"]:checked');
+        checkedRoles.forEach(function(checkbox) {
+            formData.RoleIds.push(checkbox.value);
+        });
+
+        try {
+            const res = await fetch('/admin/user/api/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await res.json();
+            
+            if (data.status) {
+                alert(data.message || "Cập nhật thành công!");
+                window.location.href = '/admin/user';
+            } else {
+                alert("Lỗi: " + data.message);
+            }
+        } catch (err) {
+            alert("Lỗi kết nối!");
+        }
+    });
+</script>
 
 <%- include('partials/footer') %>
